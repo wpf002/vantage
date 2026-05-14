@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
+  },
+  "include": ["src/**/*"],
+  "references": [
+    { "path": "../shared" },
+    { "path": "../core-private" },
+    { "path": "../core-public" },
+    { "path": "../harmonizer" },
+    { "path": "../classification" },
+    { "path": "../portfolio" },
+    { "path": "../simulation" },
+    { "path": "../explanation" },
+    { "path": "../data-ingest" }
+  ]
+}

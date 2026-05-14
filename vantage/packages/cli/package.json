@@ -1,0 +1,31 @@
+{
+  "name": "@vantage/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "vantage": "./dist/index.js"
+  },
+  "main": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "echo 'lint stub'",
+    "clean": "rm -rf dist .turbo *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@vantage/core-private": "workspace:*",
+    "@vantage/core-public": "workspace:*",
+    "@vantage/data-ingest": "workspace:*",
+    "@vantage/shared": "workspace:*",
+    "commander": "^12.1.0",
+    "dotenv": "^17.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
+}

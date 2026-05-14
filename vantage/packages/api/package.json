@@ -1,0 +1,49 @@
+{
+  "name": "@vantage/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "tsx watch --ignore '**/node_modules/**' src/index.ts",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "echo 'lint stub'",
+    "clean": "rm -rf dist .turbo *.tsbuildinfo",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:seed": "tsx src/db/seed.ts",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.0",
+    "@fastify/helmet": "^12.0.0",
+    "@vantage/classification": "workspace:*",
+    "@vantage/core-private": "workspace:*",
+    "@vantage/core-public": "workspace:*",
+    "@vantage/data-ingest": "workspace:*",
+    "@vantage/explanation": "workspace:*",
+    "@vantage/harmonizer": "workspace:*",
+    "@vantage/portfolio": "workspace:*",
+    "@vantage/shared": "workspace:*",
+    "@vantage/simulation": "workspace:*",
+    "bullmq": "^5.34.0",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.36.0",
+    "fastify": "^5.1.0",
+    "fastify-type-provider-zod": "^4.0.0",
+    "ioredis": "^5.4.0",
+    "pino": "^9.5.0",
+    "postgres": "^3.4.5",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "drizzle-kit": "^0.28.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
+}

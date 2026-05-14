@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    background: theme('colors.cream.DEFAULT');
+    color: theme('colors.ink.DEFAULT');
+    font-family: theme('fontFamily.serif');
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    /* Subtle paper grain — keeps the cream from looking flat. */
+    background-image:
+      radial-gradient(rgba(21, 22, 26, 0.012) 1px, transparent 1px),
+      radial-gradient(rgba(21, 22, 26, 0.008) 1px, transparent 1px);
+    background-size: 24px 24px, 17px 17px;
+    background-position: 0 0, 8px 11px;
+  }
+  h1, h2, h3 {
+    font-family: theme('fontFamily.display');
+    letter-spacing: theme('letterSpacing.editorial');
+  }
+  /* Editorial hairline rule — used for table dividers, section breaks. */
+  hr {
+    border: 0;
+    border-top: 1px solid theme('colors.ink.100');
+  }
+  /* Numbers render in mono everywhere — IBM Plex Mono. */
+  .num, td.num, th.num {
+    font-family: theme('fontFamily.mono');
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* Eyebrow label — small caps with tracking, used over feature headlines. */
+  .eyebrow {
+    @apply font-sans text-eyebrow uppercase text-ink-700;
+  }
+  /* FT-style hairline table */
+  .editorial-table {
+    @apply w-full text-sm;
+  }
+  .editorial-table th {
+    @apply font-sans uppercase tracking-wider text-eyebrow text-ink-700 text-left py-2 border-b border-ink-100;
+  }
+  .editorial-table td {
+    @apply py-3 border-b border-ink-100 align-top;
+  }
+  /* Breathing room between columns so adjacent values never crowd each other. */
+  .editorial-table th:not(:last-child),
+  .editorial-table td:not(:last-child) {
+    @apply pr-8;
+  }
+  .editorial-table .num {
+    @apply text-right;
+  }
+  /* Signal label — the big editorial red one-liner */
+  .signal-label {
+    @apply font-display text-2xl text-editorial tracking-tight;
+  }
+}

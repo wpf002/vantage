@@ -1,0 +1,12 @@
+{
+  "name": "AI Infrastructure peers",
+  "asOf": "2026-05-14",
+  "illiquidityDiscount": 0.25,
+  "peers": [
+    { "ticker": "NVDA", "evToRevenue": 28.4, "evToEbitda": 42.1 },
+    { "ticker": "PLTR", "evToRevenue": 22.6, "evToEbitda": 65.3 },
+    { "ticker": "SNOW", "evToRevenue": 18.2, "evToEbitda": null },
+    { "ticker": "MDB", "evToRevenue": 14.8, "evToEbitda": null },
+    { "ticker": "ARM",  "evToRevenue": 32.1, "evToEbitda": 78.0 }
+  ]
+}

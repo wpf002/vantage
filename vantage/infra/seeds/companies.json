@@ -1,0 +1,63 @@
+[
+  {
+    "name": "NVIDIA Corporation",
+    "marketType": "public",
+    "ticker": "NVDA",
+    "sector": "technology",
+    "lifeStage": "public_mature",
+    "country": "US"
+  },
+  {
+    "name": "Costco Wholesale Corporation",
+    "marketType": "public",
+    "ticker": "COST",
+    "sector": "consumer_staples",
+    "lifeStage": "public_mature",
+    "country": "US"
+  },
+  {
+    "name": "Berkshire Hathaway Inc.",
+    "marketType": "public",
+    "ticker": "BRK.B",
+    "sector": "financials",
+    "lifeStage": "public_mature",
+    "country": "US"
+  },
+  {
+    "name": "Tesla, Inc.",
+    "marketType": "public",
+    "ticker": "TSLA",
+    "sector": "consumer_discretionary",
+    "lifeStage": "public_mature",
+    "country": "US"
+  },
+  {
+    "name": "Microsoft Corporation",
+    "marketType": "public",
+    "ticker": "MSFT",
+    "sector": "technology",
+    "lifeStage": "public_mature",
+    "country": "US"
+  },
+  {
+    "name": "Anthropic, PBC",
+    "marketType": "private",
+    "sector": "technology",
+    "lifeStage": "series_c_plus",
+    "country": "US"
+  },
+  {
+    "name": "Stripe, Inc.",
+    "marketType": "private",
+    "sector": "financials",
+    "lifeStage": "pre_ipo",
+    "country": "US"
+  },
+  {
+    "name": "Databricks, Inc.",
+    "marketType": "private",
+    "sector": "technology",
+    "lifeStage": "pre_ipo",
+    "country": "US"
+  }
+]
