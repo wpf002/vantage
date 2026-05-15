@@ -41,7 +41,7 @@ export default function SourcesPage() {
                   href={`/audit/${r.id}` as Route}
                   className="font-sans text-sm text-editorial hover:underline whitespace-nowrap"
                 >
-                  See the steps →
+                  See the Steps →
                 </Link>
               </td>
             </tr>
