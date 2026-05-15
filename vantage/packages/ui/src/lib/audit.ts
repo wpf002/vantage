@@ -64,7 +64,7 @@ const RECORDS: Record<string, AuditRecord> = {
   a5: {
     id: 'a5',
     entity: 'Portfolio',
-    entityHref: '/portfolio',
+    entityHref: '/portfolios',
     what: 'Scenario Test',
     confidence: 0.92,
     date: D,

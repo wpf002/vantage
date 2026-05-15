@@ -7,9 +7,8 @@ export default function Home() {
     <div className="grid grid-cols-12 gap-x-10 gap-y-10">
       {/* Editorial lead — broadsheet hero */}
       <section className="col-span-12 lg:col-span-8 border-b border-ink-100 pb-10">
-        <h1 className="font-display text-6xl leading-[1.05] tracking-editorial mb-6">
-          Know what any company is<br />
-          worth — and why.
+        <h1 className="font-display text-3xl md:text-4xl xl:text-5xl leading-[1.05] tracking-editorial mb-6 text-balance">
+          Know what any company is worth — and why.
         </h1>
         <p className="font-serif text-deck text-ink-800 max-w-measure mb-8">
           Search any public or private company. Vantage returns a valuation range,
@@ -21,7 +20,7 @@ export default function Home() {
 
       {/* Quick picks rail */}
       <aside className="col-span-12 lg:col-span-4 border-b border-ink-100 pb-10 lg:border-b-0 lg:border-l lg:border-ink-100 lg:pl-10 lg:pb-0">
-        <p className="eyebrow mb-6">Recent reads</p>
+        <p className="eyebrow mb-6">Recent Reads</p>
         <ul className="space-y-5">
           {QUICK_PICKS.map((p) => (
             <li key={`${p.kind}-${p.id}`}>
@@ -48,20 +47,20 @@ export default function Home() {
 
       {/* Below-fold: how it works */}
       <section className="col-span-12 pt-4">
-        <p className="eyebrow pb-4 mb-8 border-b border-ink-100">How it works</p>
+        <p className="eyebrow pb-4 mb-8 border-b border-ink-100">How It Works</p>
         <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-ink-100">
           <ExplainerColumn
-            eyebrow="Public companies"
+            eyebrow="Public Companies"
             headline="Is the price ahead of the business?"
             body="For listed companies, we measure how far the stock has run versus what the fundamentals support, whether the growth story still holds, and how much hype is in the price. That rolls up into one score and a plain verdict."
           />
           <ExplainerColumn
-            eyebrow="Private companies"
+            eyebrow="Private Companies"
             headline="Three ways to value it, blended."
             body="With no stock price to lean on, we run a cash-flow model, compare against similar companies, and check the buyout math — then weight whichever methods actually fit. An early, fast-growing company leans on comparables; a steady earner leans on cash flow."
           />
           <ExplainerColumn
-            eyebrow="Beyond a single company"
+            eyebrow="Beyond a Single Company"
             headline="From one company to a whole portfolio."
             body="Any verdict can roll up into a portfolio — sorted into buckets, held to position limits, and stress-tested against thousands of scenarios before you act on it."
           />
@@ -73,9 +72,9 @@ export default function Home() {
             href={'/classifications' as Route}
             className="text-editorial underline-offset-4 hover:underline"
           >
-            Classifications page
-          </Link>
-          .
+            Classifications
+          </Link>{' '}
+          page.
         </p>
       </section>
     </div>
@@ -91,8 +90,8 @@ function SearchBar() {
         placeholder="Search a ticker or company name…"
         className="flex-1 bg-transparent font-serif text-xl placeholder:text-ink-300 focus:outline-none"
       />
-      <button type="submit" className="font-sans text-sm uppercase tracking-wider text-ink-700 hover:text-editorial">
-        Look it up →
+      <button type="submit" className="font-sans text-sm uppercase tracking-wider text-ink-900 hover:text-editorial">
+        Look It Up →
       </button>
     </form>
   );

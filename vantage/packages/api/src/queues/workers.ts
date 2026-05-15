@@ -9,11 +9,15 @@ import { persistClassification, persistSignal } from '../db/signalStore.js';
 import {
   CLASSIFICATION_QUEUE_NAME,
   HARMONIZE_QUEUE_NAME,
+  SYSTEM_PORTFOLIO_QUEUE_NAME,
   classificationQueue,
   connection,
+  ensureSystemPortfolioSchedule,
   type ClassificationJob,
   type HarmonizeJob,
+  type SystemPortfolioJob,
 } from './index.js';
+import { rebuildSystemPortfolio } from '../jobs/systemPortfolio.js';
 
 /**
  * Phase 4 workers. They run in the same Node process as the Fastify API for
@@ -194,6 +198,11 @@ async function handleClassification(job: Job<ClassificationJob>): Promise<void> 
   await persistSignal(db, emitted);
 }
 
+async function handleSystemPortfolio(job: Job<SystemPortfolioJob>): Promise<void> {
+  log.info({ jobId: job.id, reason: job.data.reason }, 'system portfolio: start');
+  await rebuildSystemPortfolio(db);
+}
+
 export function startWorkers(): void {
   if (workers.length > 0) return; // idempotent — guard against double-start
 
@@ -219,7 +228,22 @@ export function startWorkers(): void {
   });
   classificationWorker.on('ready', () => log.info('classification worker ready'));
 
-  workers = [harmonizeWorker, classificationWorker];
+  const systemPortfolioWorker = new Worker<SystemPortfolioJob>(
+    SYSTEM_PORTFOLIO_QUEUE_NAME,
+    handleSystemPortfolio,
+    { connection, concurrency: 1 },
+  );
+  systemPortfolioWorker.on('failed', (job, err) => {
+    log.error({ jobId: job?.id, err: err.message }, 'system portfolio: failed');
+  });
+  systemPortfolioWorker.on('ready', () => log.info('system portfolio worker ready'));
+
+  workers = [harmonizeWorker, classificationWorker, systemPortfolioWorker];
+
+  // Register the repeatable schedule — fire-and-forget; failures are logged
+  // inside ensureSystemPortfolioSchedule.
+  void ensureSystemPortfolioSchedule();
+
   log.info('workers started');
 }
 

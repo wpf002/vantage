@@ -9,9 +9,10 @@ import type { LifeStage } from '@vantage/shared';
 import { valuePrivateLive } from './commands/value-private-live.js';
 import { scorePublicLive } from './commands/score-public-live.js';
 import { classifyStatus } from './commands/classify-status.js';
+import { portfolioBuild } from './commands/portfolio-build.js';
 
 const program = new Command();
-program.name('vantage').description('Vantage admin & batch CLI').version('0.4.0');
+program.name('vantage').description('Vantage admin & batch CLI').version('0.5.0');
 
 // ── score-public --------------------------------------------------------
 program
@@ -92,6 +93,18 @@ program
   .option('-u, --url <url>', 'API base URL', process.env.API_URL ?? 'http://localhost:4000')
   .action(async (opts) => {
     await classifyStatus({ entity: opts.entity, url: opts.url });
+  });
+
+// ── portfolio-build -----------------------------------------------------
+program
+  .command('portfolio-build')
+  .description('Build a portfolio from current classifications (system or personal)')
+  .option('--name <name>', 'portfolio name (required for kind=personal)')
+  .option('--kind <kind>', 'system | personal', 'system')
+  .option('--owner <userId>', 'owner user id (required for kind=personal)')
+  .action(async (opts) => {
+    const kind = opts.kind === 'personal' ? 'personal' : 'system';
+    await portfolioBuild({ name: opts.name, kind, owner: opts.owner });
   });
 
 // ── health --------------------------------------------------------------

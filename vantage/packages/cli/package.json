@@ -1,6 +1,6 @@
 {
   "name": "@vantage/cli",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "bin": {
@@ -12,15 +12,20 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "lint": "echo 'lint stub'",
-    "clean": "rm -rf dist .turbo *.tsbuildinfo"
+    "clean": "rm -rf dist .turbo *.tsbuildinfo",
+    "portfolio-build": "tsx --env-file=../../.env src/index.ts portfolio-build"
   },
   "dependencies": {
+    "@vantage/api": "workspace:*",
     "@vantage/core-private": "workspace:*",
     "@vantage/core-public": "workspace:*",
     "@vantage/data-ingest": "workspace:*",
+    "@vantage/portfolio": "workspace:*",
     "@vantage/shared": "workspace:*",
     "commander": "^12.1.0",
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.36.0",
+    "postgres": "^3.4.5"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

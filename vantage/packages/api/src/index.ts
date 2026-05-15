@@ -13,6 +13,8 @@ import { portfolioRoutes } from './routes/portfolio.js';
 import { simulationRoutes } from './routes/simulation.js';
 import { auditRoutes } from './routes/audit.js';
 import { classificationsRoutes } from './routes/classifications.js';
+import { portfoliosRoutes } from './routes/portfolios.js';
+import { registerSessionMiddleware } from './middleware/session.js';
 import { startWorkers, stopWorkers } from './queues/workers.js';
 import { closeQueues } from './queues/index.js';
 
@@ -28,7 +30,12 @@ async function buildServer() {
 
   await app.register(helmet);
   await app.register(cors, {
-    origin: process.env.API_CORS_ORIGIN ?? true,
+    // Phase 5 — the UI now sends the NextAuth session cookie cross-origin to
+    // this API on protected routes, so `credentials: true` is mandatory. The
+    // wildcard origin (`true`) is rejected by browsers in credentialed mode,
+    // so default to the dev UI origin instead.
+    origin: process.env.API_CORS_ORIGIN ?? 'http://localhost:3000',
+    credentials: true,
   });
 
   // Centralized error handler mapping VantageError to HTTP
@@ -44,6 +51,10 @@ async function buildServer() {
     return reply.status(500).send({ error: 'INTERNAL', message: 'unexpected error' });
   });
 
+  // Session middleware decorates request.user from the NextAuth session
+  // cookie. Never rejects — protected routes opt in by checking request.user.
+  await registerSessionMiddleware(app);
+
   // Routes
   await app.register(healthRoutes, { prefix: '/health' });
   await app.register(privateRoutes, { prefix: '/v1/private' });
@@ -51,6 +62,7 @@ async function buildServer() {
   await app.register(searchRoutes, { prefix: '/v1' });
   await app.register(classifyRoutes, { prefix: '/v1/classify' });
   await app.register(portfolioRoutes, { prefix: '/v1/portfolio' });
+  await app.register(portfoliosRoutes, { prefix: '/v1/portfolios' });
   await app.register(simulationRoutes, { prefix: '/v1/simulation' });
   await app.register(auditRoutes, { prefix: '/v1/audit' });
   await app.register(classificationsRoutes, { prefix: '/v1/classifications' });

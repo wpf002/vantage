@@ -29,6 +29,20 @@ export class NotFoundError extends VantageError {
   }
 }
 
+export class UnauthorizedError extends VantageError {
+  constructor(message: string = 'authentication required') {
+    super(message, 'VANTAGE_UNAUTHORIZED', 401);
+    this.name = 'UnauthorizedError';
+  }
+}
+
+export class AuthorizationError extends VantageError {
+  constructor(message: string = 'not allowed') {
+    super(message, 'VANTAGE_FORBIDDEN', 403);
+    this.name = 'AuthorizationError';
+  }
+}
+
 export class InsufficientDataError extends VantageError {
   constructor(method: string, reason: string) {
     super(

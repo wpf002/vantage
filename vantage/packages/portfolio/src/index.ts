@@ -143,6 +143,8 @@ export function constructPortfolio(
   };
 }
 
+export { buildCandidatesFromClassifications, type BuildCandidatesOptions } from './candidates.js';
+
 export function allocationToSignal(a: Allocation, asOf: string): Signal {
   return {
     entity: a.entity,

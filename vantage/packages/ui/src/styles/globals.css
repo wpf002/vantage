@@ -37,14 +37,14 @@
 @layer components {
   /* Eyebrow label — small caps with tracking, used over feature headlines. */
   .eyebrow {
-    @apply font-sans text-eyebrow uppercase text-ink-700;
+    @apply font-sans text-eyebrow uppercase text-ink-900;
   }
   /* FT-style hairline table */
   .editorial-table {
     @apply w-full text-sm;
   }
   .editorial-table th {
-    @apply font-sans uppercase tracking-wider text-eyebrow text-ink-700 text-left py-2 border-b border-ink-100;
+    @apply font-sans uppercase tracking-wider text-eyebrow text-ink-900 text-left py-2 border-b border-ink-100;
   }
   .editorial-table td {
     @apply py-3 border-b border-ink-100 align-top;

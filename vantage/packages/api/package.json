@@ -1,9 +1,13 @@
 {
   "name": "@vantage/api",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./lib": "./src/lib.ts"
+  },
   "scripts": {
     "build": "tsc -b",
     "dev": "tsx watch --ignore '**/node_modules/**' --env-file=../../.env src/index.ts",

@@ -46,7 +46,7 @@ export default function SimulationPage() {
 
       <aside className="col-span-12 lg:col-span-4 lg:border-l lg:border-ink-100 lg:pl-10 space-y-8">
         <div>
-          <p className="eyebrow mb-3">Other ways to test it</p>
+          <p className="eyebrow mb-3">Other Ways to Test It</p>
           <ul className="space-y-2 font-serif">
             <li><a href="#" className="text-ink-900 hover:text-editorial">Branching Scenarios →</a></li>
             <li><a href="#" className="text-ink-900 hover:text-editorial">Good Times vs. Bad Times →</a></li>

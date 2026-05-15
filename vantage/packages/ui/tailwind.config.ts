@@ -20,7 +20,10 @@ const config: Config = {
           700: '#4A4D55',
           500: '#7B7F89',
           300: '#B6B9C1',
-          100: '#E2E3E7',
+          // ink-100 controls every hairline divider, table border, and section
+          // rule. Sits between ink-300 and ink-500 so the editorial hairlines
+          // register clearly against the cream background.
+          100: '#9DA1A8',
         },
         editorial: {
           DEFAULT: '#A8201A',

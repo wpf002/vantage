@@ -11,6 +11,7 @@ import {
   pgEnum,
   index,
   uniqueIndex,
+  primaryKey,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
@@ -42,6 +43,84 @@ export const assetClassEnum = pgEnum('asset_class', [
 ]);
 export const sleeveEnum = pgEnum('sleeve', ['core', 'growth', 'defensive', 'tactical', 'none']);
 export const signalDirectionEnum = pgEnum('signal_direction', ['bullish', 'neutral', 'bearish']);
+export const portfolioKindEnum = pgEnum('portfolio_kind', ['system', 'personal', 'published']);
+
+// ── Auth tables ───────────────────────────────────────────────────────────
+//
+// Mirrors @auth/drizzle-adapter's expected shape for NextAuth v5. The UI
+// package duplicates these four table definitions in
+// packages/ui/src/lib/auth-schema.ts so the Drizzle adapter can run without
+// pulling in the api package (single source of truth lives HERE; the UI
+// copy is annotated). lastSeenAt is a Vantage extension on top of the
+// adapter contract.
+
+export const users = pgTable(
+  'users',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    email: text('email').notNull().unique(),
+    emailVerified: timestamp('email_verified', { withTimezone: true }),
+    name: text('name'),
+    image: text('image'),
+    // Phase 5.1 — credentials auth. bcrypt hash; null for accounts created
+    // via the old magic-link path (legacy / never used in prod yet).
+    passwordHash: text('password_hash'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    emailIdx: index('users_email_idx').on(t.email),
+  }),
+);
+
+export const accounts = pgTable(
+  'accounts',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    type: text('type').notNull(),
+    provider: text('provider').notNull(),
+    providerAccountId: text('provider_account_id').notNull(),
+    refresh_token: text('refresh_token'),
+    access_token: text('access_token'),
+    expires_at: integer('expires_at'),
+    token_type: text('token_type'),
+    scope: text('scope'),
+    id_token: text('id_token'),
+    session_state: text('session_state'),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.provider, t.providerAccountId] }),
+  }),
+);
+
+export const sessions = pgTable(
+  'sessions',
+  {
+    sessionToken: text('session_token').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    expires: timestamp('expires', { withTimezone: true }).notNull(),
+  },
+  (t) => ({
+    userIdx: index('sessions_user_idx').on(t.userId),
+    expiresIdx: index('sessions_expires_idx').on(t.expires),
+  }),
+);
+
+export const verificationTokens = pgTable(
+  'verification_tokens',
+  {
+    identifier: text('identifier').notNull(),
+    token: text('token').notNull(),
+    expires: timestamp('expires', { withTimezone: true }).notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.identifier, t.token] }),
+  }),
+);
 
 // ── Platform tables ───────────────────────────────────────────────────────
 export const platformCompanies = pgTable(
@@ -120,15 +199,34 @@ export const platformClassifications = pgTable('platform_classifications', {
   asOf: timestamp('as_of', { withTimezone: true }).notNull(),
 });
 
-export const platformPortfolios = pgTable('platform_portfolios', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: text('name').notNull(),
-  constraints: jsonb('constraints').notNull(),
-  sleeveWeights: jsonb('sleeve_weights').notNull(),
-  cashWeight: real('cash_weight').notNull(),
-  warnings: jsonb('warnings').notNull(),
-  asOf: timestamp('as_of', { withTimezone: true }).notNull(),
-});
+export const platformPortfolios = pgTable(
+  'platform_portfolios',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull(),
+    constraints: jsonb('constraints').notNull(),
+    sleeveWeights: jsonb('sleeve_weights').notNull(),
+    cashWeight: real('cash_weight').notNull(),
+    warnings: jsonb('warnings').notNull(),
+    asOf: timestamp('as_of', { withTimezone: true }).notNull(),
+    // Phase 5 — sharing model. `kind` discriminates the three modes; system
+    // rows have ownerUserId=NULL, personal & published rows have an owner.
+    ownerUserId: uuid('owner_user_id').references(() => users.id, { onDelete: 'cascade' }),
+    kind: portfolioKindEnum('kind').notNull().default('personal'),
+    slug: text('slug'),
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+    description: text('description'),
+  },
+  (t) => ({
+    ownerIdx: index('platform_portfolios_owner_idx').on(t.ownerUserId),
+    kindIdx: index('platform_portfolios_kind_idx').on(t.kind),
+    // Slug is only populated for kind='published' — partial unique index keeps
+    // null rows out of the constraint while guaranteeing publish-time uniqueness.
+    slugIdx: uniqueIndex('platform_portfolios_slug_idx')
+      .on(t.slug)
+      .where(sql`${t.slug} IS NOT NULL`),
+  }),
+);
 
 export const platformAllocations = pgTable(
   'platform_allocations',
