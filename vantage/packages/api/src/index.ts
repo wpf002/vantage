@@ -12,6 +12,9 @@ import { classifyRoutes } from './routes/classify.js';
 import { portfolioRoutes } from './routes/portfolio.js';
 import { simulationRoutes } from './routes/simulation.js';
 import { auditRoutes } from './routes/audit.js';
+import { classificationsRoutes } from './routes/classifications.js';
+import { startWorkers, stopWorkers } from './queues/workers.js';
+import { closeQueues } from './queues/index.js';
 
 async function buildServer() {
   const app = Fastify({
@@ -50,6 +53,7 @@ async function buildServer() {
   await app.register(portfolioRoutes, { prefix: '/v1/portfolio' });
   await app.register(simulationRoutes, { prefix: '/v1/simulation' });
   await app.register(auditRoutes, { prefix: '/v1/audit' });
+  await app.register(classificationsRoutes, { prefix: '/v1/classifications' });
 
   return app;
 }
@@ -62,10 +66,23 @@ async function main() {
   try {
     await app.listen({ host, port });
     app.log.info(`Vantage API listening on http://${host}:${port}`);
+    // Workers run in-process for Phase 4 — kicked off after the server is
+    // bound so a Redis stall can't block API boot.
+    startWorkers();
   } catch (err) {
     app.log.error(err);
     process.exit(1);
   }
+
+  const shutdown = async (signal: string) => {
+    app.log.info({ signal }, 'shutting down');
+    await stopWorkers();
+    await app.close();
+    await closeQueues();
+    process.exit(0);
+  };
+  process.on('SIGTERM', () => void shutdown('SIGTERM'));
+  process.on('SIGINT', () => void shutdown('SIGINT'));
 }
 
 main();

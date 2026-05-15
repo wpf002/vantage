@@ -8,9 +8,10 @@ import { FmpClient } from '@vantage/data-ingest/public';
 import type { LifeStage } from '@vantage/shared';
 import { valuePrivateLive } from './commands/value-private-live.js';
 import { scorePublicLive } from './commands/score-public-live.js';
+import { classifyStatus } from './commands/classify-status.js';
 
 const program = new Command();
-program.name('vantage').description('Vantage admin & batch CLI').version('0.2.0');
+program.name('vantage').description('Vantage admin & batch CLI').version('0.4.0');
 
 // ── score-public --------------------------------------------------------
 program
@@ -81,6 +82,16 @@ program
   .requiredOption('-t, --ticker <symbol>', 'ticker symbol')
   .action(async (opts) => {
     await scorePublicLive({ ticker: opts.ticker });
+  });
+
+// ── classify-status -----------------------------------------------------
+program
+  .command('classify-status')
+  .description('Read the current classification for an entity (state inspection)')
+  .requiredOption('--entity <id-or-ticker>', 'company UUID or ticker')
+  .option('-u, --url <url>', 'API base URL', process.env.API_URL ?? 'http://localhost:4000')
+  .action(async (opts) => {
+    await classifyStatus({ entity: opts.entity, url: opts.url });
   });
 
 // ── health --------------------------------------------------------------

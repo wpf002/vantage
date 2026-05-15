@@ -1,10 +1,12 @@
 import { eq } from 'drizzle-orm';
 import { flattenLineage } from '@vantage/harmonizer';
 import type { Signal, Sector } from '@vantage/shared';
+import type { ClassificationResult } from '@vantage/classification';
 import type { LivePrivateValuationResult } from '@vantage/core-private/orchestrator';
 import type { LivePublicScoreResult } from '@vantage/core-public/orchestrator';
 import type { FmpProfile } from '@vantage/data-ingest/public';
 import { schema, type DB } from './client.js';
+import { harmonizeQueue } from '../queues/index.js';
 
 /**
  * Persistence for harmonized signals and live private valuations.
@@ -16,9 +18,14 @@ import { schema, type DB } from './client.js';
 
 /**
  * Persist a harmonized Signal and its lineage. Returns the new signal id.
+ *
+ * After the transaction commits, the signal is enqueued onto the Phase 4
+ * harmonize queue. The enqueue is best-effort: if Redis is unreachable we log
+ * and move on rather than fail the write — the worker queue is meant to be
+ * decoupled from request persistence, not transactional with it.
  */
 export async function persistSignal(db: DB, signal: Signal): Promise<string> {
-  return db.transaction(async (tx) => {
+  const signalId = await db.transaction(async (tx) => {
     const [row] = await tx
       .insert(schema.platformSignals)
       .values({
@@ -34,13 +41,13 @@ export async function persistSignal(db: DB, signal: Signal): Promise<string> {
       })
       .returning({ id: schema.platformSignals.id });
 
-    const signalId = row!.id;
+    const id = row!.id;
 
     const lineage = flattenLineage(signal);
     if (lineage.length > 0) {
       await tx.insert(schema.platformAudit).values(
         lineage.map((step) => ({
-          signalId,
+          signalId: id,
           step: step.step,
           op: step.op,
           inputs: step.inputs,
@@ -51,8 +58,66 @@ export async function persistSignal(db: DB, signal: Signal): Promise<string> {
       );
     }
 
-    return signalId;
+    return id;
   });
+
+  try {
+    await harmonizeQueue.add('harmonize', {
+      signalId,
+      entity: signal.entity,
+      signalType: signal.signalType,
+    });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[signalStore] failed to enqueue harmonize job', err);
+  }
+
+  return signalId;
+}
+
+export interface PersistClassificationResult {
+  classificationId: string;
+  decisionId: string;
+}
+
+/**
+ * Persist a ClassificationResult: one row in platform_classifications, and a
+ * mirrored decision-log entry for Phase 8 meta-learning. No uniqueness
+ * constraint on entity — each run inserts a fresh row, and the
+ * /v1/classifications endpoint surfaces only the most recent per entity.
+ */
+export async function persistClassification(
+  db: DB,
+  result: ClassificationResult,
+  triggeredBySignalId: string,
+): Promise<PersistClassificationResult> {
+  const asOf = new Date(result.asOf);
+
+  const [row] = await db
+    .insert(schema.platformClassifications)
+    .values({
+      entity: result.entity,
+      assetClass: result.classification,
+      confidence: result.confidence,
+      rationale: result.rationale,
+      contributingSignals: result.contributingSignals,
+      asOf,
+    })
+    .returning({ id: schema.platformClassifications.id });
+  const classificationId = row!.id;
+
+  const [decisionRow] = await db
+    .insert(schema.platformDecisions)
+    .values({
+      entity: result.entity,
+      decisionType: 'classification',
+      decisionPayload: { result, triggeredBySignalId },
+      outcomePayload: null,
+    })
+    .returning({ id: schema.platformDecisions.id });
+  const decisionId = decisionRow!.id;
+
+  return { classificationId, decisionId };
 }
 
 export interface PersistLiveValuationResult {

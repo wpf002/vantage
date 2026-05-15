@@ -1,6 +1,6 @@
 const GROUPS = [
   { name: 'Core', target: 0.5, actual: 0.46, holdings: 8 },
-  { name: 'Growth bets', target: 0.25, actual: 0.22, holdings: 5 },
+  { name: 'Growth Bets', target: 0.25, actual: 0.22, holdings: 5 },
   { name: 'Defensive', target: 0.15, actual: 0.15, holdings: 4 },
   { name: 'Tactical', target: 0.1, actual: 0.08, holdings: 3 },
 ];
@@ -9,8 +9,8 @@ const HOLDINGS = [
   { name: 'Costco Wholesale', ticker: 'COST', group: 'Core', sector: 'Consumer Staples', weight: 0.09 },
   { name: 'Berkshire Hathaway', ticker: 'BRK.B', group: 'Core', sector: 'Financials', weight: 0.08 },
   { name: 'Microsoft', ticker: 'MSFT', group: 'Core', sector: 'Technology', weight: 0.07 },
-  { name: 'Stripe', ticker: '—', group: 'Growth bets', sector: 'Payments', weight: 0.06 },
-  { name: 'Anthropic', ticker: '—', group: 'Growth bets', sector: 'Technology', weight: 0.05 },
+  { name: 'Stripe', ticker: '—', group: 'Growth Bets', sector: 'Payments', weight: 0.06 },
+  { name: 'Anthropic', ticker: '—', group: 'Growth Bets', sector: 'Technology', weight: 0.05 },
   { name: 'US Treasury Bills (1–3 months)', ticker: 'BIL', group: 'Defensive', sector: 'Cash', weight: 0.1 },
 ];
 
@@ -21,7 +21,7 @@ export default function PortfolioPage() {
     <div className="grid grid-cols-12 gap-x-10 gap-y-10">
       <header className="col-span-12 border-b border-ink-100 pb-10">
         <p className="eyebrow mb-3">Portfolio</p>
-        <h1 className="font-display text-5xl tracking-editorial">The portfolio</h1>
+        <h1 className="font-display text-5xl tracking-editorial">Portfolio</h1>
         <p className="font-serif text-deck text-ink-700 max-w-measure mt-6">
           Every holding Vantage has a read on can roll up into one portfolio. Holdings are sorted
           into a few groups by their role, and the whole thing is held to a set of simple limits.

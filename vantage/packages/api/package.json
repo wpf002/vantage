@@ -1,6 +1,6 @@
 {
   "name": "@vantage/api",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
@@ -15,7 +15,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file=../../.env src/db/migrate.ts",
     "db:seed": "tsx --env-file=../../.env src/db/seed.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "classify:backfill": "tsx --env-file=../../.env src/scripts/backfill-classifications.ts"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.0",

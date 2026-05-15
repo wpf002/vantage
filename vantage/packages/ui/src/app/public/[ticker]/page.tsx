@@ -4,6 +4,7 @@ import type { AuditStep, Direction } from '@/lib/companies';
 import { apiGet } from '@/lib/api';
 import { formatDate } from '@/lib/format';
 import { RunScoreButton } from './RunScoreButton';
+import { FreshnessIndicator } from './FreshnessIndicator';
 
 /**
  * Public company page — reads the latest live Public Score from the API.
@@ -69,9 +70,9 @@ interface LatestPublicScoreResponse {
 }
 
 const OP_LABELS: Record<string, string> = {
-  'public.egs': 'Expectation Gap analysis',
-  'public.nis': 'Narrative Integrity check',
-  'public.nhs': 'Narrative Heat reading',
+  'public.egs': 'Expectation Gap Analysis',
+  'public.nis': 'Narrative Integrity Check',
+  'public.nhs': 'Narrative Heat Reading',
 };
 
 const FACTOR_MEANING = {
@@ -118,9 +119,13 @@ function nhsReading(score: number): string {
   return 'Cool — little speculative premium in the price.';
 }
 
-/** The plain-English "read" — what the score and its three factors add up to. */
+/**
+ * Deterministic analysis paragraph — branches on score thresholds and
+ * numeric component readings. No LLM is involved; every sentence is a fixed
+ * template selected by the engine outputs.
+ */
 function buildRead(
-  name: string,
+  _name: string,
   score: number,
   nis: Components['nis'],
   nhs: Components['nhs'],
@@ -128,53 +133,50 @@ function buildRead(
 ): string {
   const headline =
     score <= 25
-      ? `${name}'s price and its fundamentals are broadly telling the same story — there's no real gap to close here.`
+      ? 'Price and fundamentals are broadly aligned.'
       : score <= 45
-        ? `${name} carries a modest gap between what its price assumes and what the numbers currently show.`
+        ? 'A modest gap separates price from fundamentals.'
         : score <= 65
-          ? `The gap between ${name}'s price and its fundamentals is wide enough to take seriously.`
-          : `${name}'s price is leaning hard on a story the numbers don't yet back up.`;
+          ? 'Price and fundamentals show a meaningful gap.'
+          : 'Price runs well ahead of fundamentals.';
 
   let earnings = '';
   if (prov) {
-    const epsWord = prov.epsSurprisePct >= 0 ? 'beat' : 'missed';
+    const epsDir = prov.epsSurprisePct >= 0 ? 'beat' : 'missed';
     const reaction =
       prov.oneDayReturn > 0.01
-        ? `the stock rose ${pctAbs(prov.oneDayReturn)} the next day`
+        ? `Shares added ${pctAbs(prov.oneDayReturn)} the following session.`
         : prov.oneDayReturn < -0.01
-          ? `the stock fell ${pctAbs(prov.oneDayReturn)} the next day`
-          : 'the stock barely moved';
-    earnings = ` The most recent quarter ${epsWord} earnings expectations by ${pctAbs(
-      prov.epsSurprisePct,
-    )}, and ${reaction}.`;
+          ? `Shares fell ${pctAbs(prov.oneDayReturn)} the following session.`
+          : 'Shares were broadly flat on the print.';
+    earnings = ` Most recent quarter ${epsDir} consensus by ${pctAbs(prov.epsSurprisePct)}. ${reaction}`;
   }
 
   const narrative =
     nis.score >= 66
-      ? 'The growth story still holds together in the segment numbers'
+      ? 'Segment mix supports the growth narrative.'
       : nis.score >= 33
-        ? 'The growth story is only partly borne out by the segment numbers'
-        : 'The segment numbers do little to support the growth story';
+        ? 'Segment mix offers partial support for the growth narrative.'
+        : 'Segment mix offers limited support for the growth narrative.';
   const heat =
     nhs.score >= 66
-      ? 'sentiment is running hot'
+      ? 'Speculative premium is elevated; analyst targets and the multiple are stretched.'
       : nhs.score >= 33
-        ? "there's some speculative heat in the price"
-        : "there's little speculative premium in the price";
+        ? 'Speculative premium is present but contained.'
+        : 'Speculative premium is muted.';
 
-  return `${headline}${earnings} ${narrative}, and ${heat}.`;
+  return `${headline}${earnings} ${narrative} ${heat}`;
 }
 
-/** A reader-facing account of exactly what FMP data the run was built on. */
+/** Source line for the data the run was built on. */
 function buildProvenance(name: string, prov: Provenance): string {
   const epsDir = prov.epsSurprisePct >= 0 ? 'above' : 'below';
   const revDir = prov.revenueSurprisePct >= 0 ? 'above' : 'below';
-  const move = (r: number): string => (r >= 0 ? `up ${pctAbs(r)}` : `down ${pctAbs(r)}`);
+  const move = (r: number): string => (r >= 0 ? `+${pctAbs(r)}` : `−${pctAbs(r)}`);
   return (
-    `Built from ${name}'s ${longDate(prov.earningsDate)} earnings report. ` +
-    `Earnings came in ${pctAbs(prov.epsSurprisePct)} ${epsDir} consensus and revenue ` +
-    `${pctAbs(prov.revenueSurprisePct)} ${revDir}; the stock closed ${move(prov.oneDayReturn)} ` +
-    `the next trading day and was ${move(prov.threeDayReturn)} three days on.`
+    `Source: ${name} earnings report, ${longDate(prov.earningsDate)}. ` +
+    `EPS ${pctAbs(prov.epsSurprisePct)} ${epsDir} consensus, revenue ${pctAbs(prov.revenueSurprisePct)} ${revDir}. ` +
+    `Share-price reaction: ${move(prov.oneDayReturn)} (1d), ${move(prov.threeDayReturn)} (3d).`
   );
 }
 
@@ -273,6 +275,7 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
         </p>
         <h1 className="font-display text-6xl tracking-editorial leading-tight mb-6">{name}</h1>
         <p className="font-mono text-sm text-ink-500">As of {formatDate(data.signal.timestamp)}</p>
+        <FreshnessIndicator ticker={ticker} asOf={data.signal.timestamp} />
       </header>
 
       <section className="col-span-12 lg:col-span-8 space-y-12">
@@ -285,7 +288,7 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
         />
 
         <div>
-          <p className="eyebrow mb-4">Why we landed there</p>
+          <p className="eyebrow mb-4">Analysis</p>
           <p className="font-serif text-deck text-ink-800 max-w-measure leading-relaxed">{read}</p>
         </div>
 
@@ -346,8 +349,8 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
                           <td className="font-serif text-ink-900 align-top">
                             {s.name}
                             {s.isNarrativeSegment && (
-                              <span className="block font-sans text-xs text-editorial mt-1">
-                                carries the growth story
+                              <span className="block font-sans text-xs uppercase tracking-wider text-editorial mt-1">
+                                Growth Driver
                               </span>
                             )}
                           </td>
@@ -362,8 +365,8 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
                 </table>
                 {narrativeSegment && (
                   <p className="font-sans text-xs text-ink-500 mt-3 leading-snug max-w-measure">
-                    The growth story is read off {narrativeSegment.name} for now — a rule-based
-                    pick that a later release will hand to a model.
+                    Narrative Integrity is currently computed against {narrativeSegment.name}.
+                    Segment selection is rule-based for now; a later release will hand it to a model.
                   </p>
                 )}
               </>

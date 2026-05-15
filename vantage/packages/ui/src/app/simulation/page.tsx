@@ -48,8 +48,8 @@ export default function SimulationPage() {
         <div>
           <p className="eyebrow mb-3">Other ways to test it</p>
           <ul className="space-y-2 font-serif">
-            <li><a href="#" className="text-ink-900 hover:text-editorial">Branching scenarios →</a></li>
-            <li><a href="#" className="text-ink-900 hover:text-editorial">Good times vs. bad times →</a></li>
+            <li><a href="#" className="text-ink-900 hover:text-editorial">Branching Scenarios →</a></li>
+            <li><a href="#" className="text-ink-900 hover:text-editorial">Good Times vs. Bad Times →</a></li>
           </ul>
         </div>
         <div>

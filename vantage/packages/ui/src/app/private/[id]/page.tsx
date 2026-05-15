@@ -51,17 +51,17 @@ interface LatestValuationResponse {
 }
 
 const OP_LABELS: Record<string, string> = {
-  'private.dcf': 'Discounted cash flow',
-  'private.comps': 'Comparable companies',
-  'private.lbo': 'Buyout (LBO) model',
-  'private.ml_adjustment': 'Machine-learning adjustment',
-  'private.blended_valuation': 'Blended valuation',
+  'private.dcf': 'Discounted Cash Flow',
+  'private.comps': 'Comparable Companies',
+  'private.lbo': 'Buyout (LBO) Model',
+  'private.ml_adjustment': 'Machine-Learning Adjustment',
+  'private.blended_valuation': 'Blended Valuation',
 };
 
 const METHOD_LABELS: Record<'dcf' | 'comps' | 'lbo', string> = {
-  dcf: 'Discounted cash flow',
-  comps: 'Comparable companies',
-  lbo: 'Buyout (LBO) model',
+  dcf: 'Discounted Cash Flow',
+  comps: 'Comparable Companies',
+  lbo: 'Buyout (LBO) Model',
 };
 
 const fmtUsd = (n: number): string => {
@@ -150,12 +150,10 @@ export default async function PrivateCompany({ params }: { params: Promise<{ id:
     `on the cautious case to ${fmtUsd(valuation.bull)} on the optimistic one.`;
 
   const rationale =
-    'This is a live valuation — every input was pulled fresh and run through three models: ' +
-    'a discounted cash-flow analysis, a comparable-companies analysis, and a buyout model, ' +
-    'then weighted by life stage. ' +
+    'Valuation blends three methods — discounted cash flow, public comparables, and a leveraged-buyout case — weighted by life stage. ' +
     (revenueIntel?.revenueSource
-      ? `The revenue base is drawn from ${revenueIntel.revenueSource}, at ${revenueIntel.revenueConfidence} confidence.`
-      : 'The revenue base is drawn from live company research.');
+      ? `Revenue base sourced from ${revenueIntel.revenueSource} (${revenueIntel.revenueConfidence} confidence).`
+      : 'Revenue base drawn from live company research.');
 
   return (
     <article className="grid grid-cols-12 gap-x-10 gap-y-10">
@@ -233,7 +231,7 @@ export default async function PrivateCompany({ params }: { params: Promise<{ id:
         </div>
 
         <div>
-          <p className="eyebrow mb-4">Why we landed there</p>
+          <p className="eyebrow mb-4">Analysis</p>
           <p className="font-serif text-base text-ink-800 max-w-measure leading-relaxed">
             {rationale}
           </p>

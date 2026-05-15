@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { Route } from 'next';
 import { QUICK_PICKS } from '@/lib/companies';
 
 export default function Home() {
@@ -65,6 +66,17 @@ export default function Home() {
             body="Any verdict can roll up into a portfolio — sorted into buckets, held to position limits, and stress-tested against thousands of scenarios before you act on it."
           />
         </div>
+        <p className="font-serif text-base text-ink-700 mt-8 max-w-measure leading-relaxed">
+          Every score rolls up into an asset class — Core, High Asymmetry, Tactical, or Avoid —
+          listed on the{' '}
+          <Link
+            href={'/classifications' as Route}
+            className="text-editorial underline-offset-4 hover:underline"
+          >
+            Classifications page
+          </Link>
+          .
+        </p>
       </section>
     </div>
   );

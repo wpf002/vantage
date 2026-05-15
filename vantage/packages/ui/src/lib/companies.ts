@@ -60,16 +60,16 @@ export interface PrivateCompany {
 const AS_OF = '2026-05-14';
 
 const publicLineage = (egs: number, nis: number, nhs: number): AuditStep[] => [
-  { step: 0, label: 'Expectation Gap analysis', op: 'public.egs', weight: egs, ts: AS_OF },
-  { step: 1, label: 'Narrative Integrity check', op: 'public.nis', weight: nis, ts: AS_OF },
-  { step: 2, label: 'Narrative Heat reading', op: 'public.nhs', weight: nhs, ts: AS_OF },
+  { step: 0, label: 'Expectation Gap Analysis', op: 'public.egs', weight: egs, ts: AS_OF },
+  { step: 1, label: 'Narrative Integrity Check', op: 'public.nis', weight: nis, ts: AS_OF },
+  { step: 2, label: 'Narrative Heat Reading', op: 'public.nhs', weight: nhs, ts: AS_OF },
 ];
 
 const privateLineage = (dcf: number, comps: number, lbo: number): AuditStep[] => [
-  { step: 0, label: 'Discounted cash flow', op: 'private.dcf', weight: dcf, ts: AS_OF },
-  { step: 1, label: 'Comparable companies', op: 'private.comps', weight: comps, ts: AS_OF },
-  { step: 2, label: 'Buyout (LBO) model', op: 'private.lbo', weight: lbo, ts: AS_OF },
-  { step: 3, label: 'Machine-learning adjustment', op: 'private.ml_adjustment', weight: null, ts: AS_OF },
+  { step: 0, label: 'Discounted Cash Flow', op: 'private.dcf', weight: dcf, ts: AS_OF },
+  { step: 1, label: 'Comparable Companies', op: 'private.comps', weight: comps, ts: AS_OF },
+  { step: 2, label: 'Buyout (LBO) Model', op: 'private.lbo', weight: lbo, ts: AS_OF },
+  { step: 3, label: 'Machine-Learning Adjustment', op: 'private.ml_adjustment', weight: null, ts: AS_OF },
 ];
 
 const factor = (name: string, meaning: string, score: number, reading: string): ScoreFactor => ({
@@ -273,9 +273,9 @@ const PRIVATE_COMPANIES: Record<string, PrivateCompany> = {
       "Anthropic is hard to pin down precisely, and the valuation range shows it — the optimistic case is more than triple the pessimistic one. We leaned on comparable companies rather than a cash-flow model, because the company is still spending heavily to grow and its near-term cash flows would understate the business. The bet here is not subtle: a real chance it disappoints, and a larger chance it ends up worth far more than today's mark.",
     valuation: { bear: 18_000_000_000, base: 32_000_000_000, bull: 58_000_000_000 },
     methods: [
-      { method: 'Discounted cash flow', weight: 0.0, why: 'Set aside — too early for a cash-flow model to mean much.' },
-      { method: 'Comparable companies', weight: 0.7, why: 'Valued against similar AI-infrastructure companies.' },
-      { method: 'Buyout (LBO) model', weight: 0.3, why: 'Cross-checked against what a growth buyer could pay.' },
+      { method: 'Discounted Cash Flow', weight: 0.0, why: 'Set aside — too early for a cash-flow model to mean much.' },
+      { method: 'Comparable Companies', weight: 0.7, why: 'Valued against similar AI-infrastructure companies.' },
+      { method: 'Buyout (LBO) Model', weight: 0.3, why: 'Cross-checked against what a growth buyer could pay.' },
     ],
     lineage: privateLineage(0.0, 0.7, 0.3),
   },
@@ -294,9 +294,9 @@ const PRIVATE_COMPANIES: Record<string, PrivateCompany> = {
       "Stripe is far enough along that the numbers behave. Payment volume is large, growing, and fairly predictable, so the valuation range is tighter than most private companies. We weighted the cash-flow model and the comparable-company analysis roughly evenly — and they agree, which is reassuring. This reads less like a bet and more like a hold.",
     valuation: { bear: 65_000_000_000, base: 95_000_000_000, bull: 130_000_000_000 },
     methods: [
-      { method: 'Discounted cash flow', weight: 0.45, why: 'Cash flows are stable enough to model directly.' },
-      { method: 'Comparable companies', weight: 0.45, why: 'Checked against public payment networks.' },
-      { method: 'Buyout (LBO) model', weight: 0.1, why: 'Light cross-check — buyout math is not the main driver.' },
+      { method: 'Discounted Cash Flow', weight: 0.45, why: 'Cash flows are stable enough to model directly.' },
+      { method: 'Comparable Companies', weight: 0.45, why: 'Checked against public payment networks.' },
+      { method: 'Buyout (LBO) Model', weight: 0.1, why: 'Light cross-check — buyout math is not the main driver.' },
     ],
     lineage: privateLineage(0.45, 0.45, 0.1),
   },
@@ -315,9 +315,9 @@ const PRIVATE_COMPANIES: Record<string, PrivateCompany> = {
       "Databricks is growing quickly, and the valuation assumes that continues. We relied mostly on comparable companies, since the business reinvests everything into growth and a cash-flow model would understate it today. The range is wide on purpose: if growth holds, the current price looks cheap; if it slows, the premium unwinds quickly.",
     valuation: { bear: 30_000_000_000, base: 55_000_000_000, bull: 95_000_000_000 },
     methods: [
-      { method: 'Discounted cash flow', weight: 0.1, why: 'Minimal weight — heavy reinvestment makes near-term cash flows misleading.' },
-      { method: 'Comparable companies', weight: 0.75, why: 'Valued against fast-growing data and cloud companies.' },
-      { method: 'Buyout (LBO) model', weight: 0.15, why: 'Light cross-check on buyer economics.' },
+      { method: 'Discounted Cash Flow', weight: 0.1, why: 'Minimal weight — heavy reinvestment makes near-term cash flows misleading.' },
+      { method: 'Comparable Companies', weight: 0.75, why: 'Valued against fast-growing data and cloud companies.' },
+      { method: 'Buyout (LBO) Model', weight: 0.15, why: 'Light cross-check on buyer economics.' },
     ],
     lineage: privateLineage(0.1, 0.75, 0.15),
   },

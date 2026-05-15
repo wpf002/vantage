@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import type { Route } from 'next';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 
 const NAV = [
   { href: '/', label: 'Home' },
   { href: '/portfolio', label: 'Portfolio' },
+  { href: '/classifications', label: 'Classifications' },
   { href: '/simulation', label: 'Scenarios' },
   { href: '/audit', label: 'Sources' },
 ] as const;
@@ -27,18 +29,24 @@ export function Header() {
           >
             Vantage
           </Link>
-          <nav className="flex gap-8 text-sm font-sans">
-            {NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={clsx(
-                  'hover:text-editorial',
-                  isActive(item.href) && 'text-editorial',
+          <nav className="flex items-baseline text-sm font-sans">
+            {NAV.map((item, i) => (
+              <span key={item.href} className="flex items-baseline">
+                {i > 0 && (
+                  <span aria-hidden="true" className="px-3 text-ink-300">
+                    ·
+                  </span>
                 )}
-              >
-                {item.label}
-              </Link>
+                <Link
+                  href={item.href as Route}
+                  className={clsx(
+                    'hover:text-editorial',
+                    isActive(item.href) && 'text-editorial',
+                  )}
+                >
+                  {item.label}
+                </Link>
+              </span>
             ))}
           </nav>
         </div>
