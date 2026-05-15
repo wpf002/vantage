@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS "platform_companies_ticker_idx";--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "platform_companies_ticker_idx" ON "platform_companies" USING btree ("ticker") WHERE "platform_companies"."ticker" IS NOT NULL;

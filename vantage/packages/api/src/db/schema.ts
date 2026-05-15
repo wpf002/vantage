@@ -10,7 +10,9 @@ import {
   boolean,
   pgEnum,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 /**
  * Vantage database schema.
@@ -57,7 +59,11 @@ export const platformCompanies = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
-    tickerIdx: index('platform_companies_ticker_idx').on(t.ticker),
+    // Partial unique index — public tickers are unique; private rows have no
+    // ticker and are excluded. Keeps db:seed and ensureCompany idempotent.
+    tickerIdx: uniqueIndex('platform_companies_ticker_idx')
+      .on(t.ticker)
+      .where(sql`${t.ticker} IS NOT NULL`),
     nameIdx: index('platform_companies_name_idx').on(t.name),
   }),
 );

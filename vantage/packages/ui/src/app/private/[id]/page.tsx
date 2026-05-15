@@ -150,13 +150,12 @@ export default async function PrivateCompany({ params }: { params: Promise<{ id:
     `on the cautious case to ${fmtUsd(valuation.bull)} on the optimistic one.`;
 
   const rationale =
-    'This is a live valuation: every input was pulled fresh and run through a discounted ' +
-    'cash-flow model, a comparable-companies analysis, and a buyout model, then blended by ' +
-    'life stage. ' +
+    'This is a live valuation — every input was pulled fresh and run through three models: ' +
+    'a discounted cash-flow analysis, a comparable-companies analysis, and a buyout model, ' +
+    'then weighted by life stage. ' +
     (revenueIntel?.revenueSource
-      ? `The revenue base came from ${revenueIntel.revenueSource} (${revenueIntel.revenueConfidence} confidence).`
-      : 'The revenue base came from live company research.') +
-    (revenueIntel?.growthCommentary ? ` ${revenueIntel.growthCommentary}` : '');
+      ? `The revenue base is drawn from ${revenueIntel.revenueSource}, at ${revenueIntel.revenueConfidence} confidence.`
+      : 'The revenue base is drawn from live company research.');
 
   return (
     <article className="grid grid-cols-12 gap-x-10 gap-y-10">

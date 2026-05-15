@@ -1,6 +1,9 @@
+import { eq } from 'drizzle-orm';
 import { flattenLineage } from '@vantage/harmonizer';
-import type { Signal } from '@vantage/shared';
+import type { Signal, Sector } from '@vantage/shared';
 import type { LivePrivateValuationResult } from '@vantage/core-private/orchestrator';
+import type { LivePublicScoreResult } from '@vantage/core-public/orchestrator';
+import type { FmpProfile } from '@vantage/data-ingest/public';
 import { schema, type DB } from './client.js';
 
 /**
@@ -106,6 +109,123 @@ export async function persistLiveValuation(
       await db.insert(schema.privateAltData).values(altRows);
     }
   }
+
+  return { signalId, decisionId };
+}
+
+/**
+ * Map FMP's freeform sector string onto the Vantage `Sector` enum. Best-effort
+ * substring match — anything unrecognized falls back to 'other'.
+ */
+export function mapSectorString(raw: string | undefined): Sector {
+  if (!raw) return 'other';
+  const s = raw.toLowerCase();
+  if (s.includes('tech')) return 'technology';
+  if (s.includes('health') || s.includes('pharma') || s.includes('biotech')) return 'healthcare';
+  if (s.includes('financ') || s.includes('bank') || s.includes('insurance')) return 'financials';
+  if (s.includes('communication')) return 'communication_services';
+  if (s.includes('consumer') && (s.includes('cyclical') || s.includes('discretionary'))) {
+    return 'consumer_discretionary';
+  }
+  if (s.includes('consumer') && (s.includes('defensive') || s.includes('staple'))) {
+    return 'consumer_staples';
+  }
+  if (s.includes('industrial')) return 'industrials';
+  if (s.includes('energy') || s.includes('oil') || s.includes('gas')) return 'energy';
+  if (s.includes('material') || s.includes('mining') || s.includes('chemical')) return 'materials';
+  if (s.includes('utilit')) return 'utilities';
+  if (s.includes('real estate') || s.includes('reit')) return 'real_estate';
+  return 'other';
+}
+
+/**
+ * Look up — or create — the `platform_companies` row for a public ticker.
+ * Universal search relies on this: any FMP-resolvable ticker becomes a seeded
+ * company the first time it's scored. lifeStage defaults to 'public_mature'
+ * (Phase 8 meta-learning can refine it later).
+ */
+export async function ensureCompany(db: DB, profile: FmpProfile) {
+  const existing = await db
+    .select()
+    .from(schema.platformCompanies)
+    .where(eq(schema.platformCompanies.ticker, profile.symbol))
+    .limit(1);
+  if (existing.length > 0) return existing[0]!;
+
+  const [row] = await db
+    .insert(schema.platformCompanies)
+    .values({
+      name: profile.companyName,
+      marketType: 'public',
+      ticker: profile.symbol,
+      sector: mapSectorString(profile.sector),
+      lifeStage: 'public_mature',
+      country: 'US',
+    })
+    .onConflictDoNothing()
+    .returning();
+  if (row) return row;
+
+  // Lost an insert race against a concurrent request — the row exists now.
+  const [raced] = await db
+    .select()
+    .from(schema.platformCompanies)
+    .where(eq(schema.platformCompanies.ticker, profile.symbol))
+    .limit(1);
+  return raced!;
+}
+
+export interface PersistPublicScoreResult {
+  signalId: string;
+  decisionId: string;
+}
+
+/**
+ * Persist a full live public score: the harmonized Signal + lineage, a
+ * decision-log row carrying the raw FMP input snapshot, the three component
+ * payloads, the assembled score, and the parsed product segments.
+ */
+export async function persistPublicScore(
+  db: DB,
+  result: LivePublicScoreResult,
+): Promise<PersistPublicScoreResult> {
+  const { result: score, signal, inputs } = result;
+  const ticker = score.ticker;
+  const asOf = new Date(score.asOf);
+
+  const signalId = await persistSignal(db, signal);
+
+  const [decisionRow] = await db
+    .insert(schema.platformDecisions)
+    .values({
+      entity: ticker,
+      decisionType: 'public_score',
+      decisionPayload: inputs,
+      outcomePayload: null, // filled in later by Phase 8 meta-learning
+    })
+    .returning({ id: schema.platformDecisions.id });
+  const decisionId = decisionRow!.id;
+
+  await db.insert(schema.publicEgs).values({ ticker, payload: score.components.egs, asOf });
+  await db.insert(schema.publicNis).values({ ticker, payload: score.components.nis, asOf });
+  await db.insert(schema.publicNhs).values({ ticker, payload: score.components.nhs, asOf });
+
+  await db.insert(schema.publicScores).values({
+    ticker,
+    score: score.score,
+    label: score.label,
+    direction: score.direction,
+    components: score.components,
+    confidence: score.confidence,
+    asOf,
+  });
+
+  await db.insert(schema.publicSegments).values({
+    ticker,
+    kind: 'product',
+    payload: inputs.segments ?? [],
+    asOf,
+  });
 
   return { signalId, decisionId };
 }

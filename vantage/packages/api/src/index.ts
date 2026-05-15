@@ -7,6 +7,7 @@ import { VantageError } from '@vantage/shared';
 import { healthRoutes } from './routes/health.js';
 import { privateRoutes } from './routes/private.js';
 import { publicRoutes } from './routes/public.js';
+import { searchRoutes } from './routes/search.js';
 import { classifyRoutes } from './routes/classify.js';
 import { portfolioRoutes } from './routes/portfolio.js';
 import { simulationRoutes } from './routes/simulation.js';
@@ -44,6 +45,7 @@ async function buildServer() {
   await app.register(healthRoutes, { prefix: '/health' });
   await app.register(privateRoutes, { prefix: '/v1/private' });
   await app.register(publicRoutes, { prefix: '/v1/public' });
+  await app.register(searchRoutes, { prefix: '/v1' });
   await app.register(classifyRoutes, { prefix: '/v1/classify' });
   await app.register(portfolioRoutes, { prefix: '/v1/portfolio' });
   await app.register(simulationRoutes, { prefix: '/v1/simulation' });
