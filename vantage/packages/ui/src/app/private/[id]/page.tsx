@@ -3,39 +3,207 @@ import { SignalLabel } from '@/components/SignalLabel';
 import { ValuationBand } from '@/components/ValuationBand';
 import { AuditChain } from '@/components/AuditChain';
 import { getPrivateCompany } from '@/lib/companies';
+import type { AuditStep, Direction, MethodWeight } from '@/lib/companies';
+import { apiGet } from '@/lib/api';
+import { formatDate } from '@/lib/format';
+import { RunValuationButton } from './RunValuationButton';
+
+/**
+ * Private company page — reads the latest live valuation from the API.
+ * When no valuation exists yet, renders an editorial empty state with a
+ * button that triggers a fresh orchestrator run.
+ */
+
+interface ValuationMetadata {
+  companyName?: string;
+  lifeStage?: string;
+  finalValuation?: { bear: number; base: number; bull: number };
+  weights?: { dcf: number; comps: number; lbo: number };
+  methodResults?: Array<{
+    method: 'dcf' | 'comps' | 'lbo';
+    enterpriseValue: number;
+    confidence: number;
+    rationale: string;
+    warnings: string[];
+  }>;
+  revenueIntel?: {
+    revenueLtmUsd: number | null;
+    revenueConfidence: string;
+    revenueAsOfMonth: string | null;
+    revenueSource: string | null;
+    growthCommentary: string | null;
+  };
+  confidence?: number;
+}
+
+interface LatestValuationResponse {
+  signal: {
+    id: string;
+    entity: string;
+    direction: Direction;
+    confidence: number;
+    rationale: string;
+    timestamp: string;
+    metadata: ValuationMetadata | null;
+  };
+  lineage: Array<{ step: number; op: string; weight: number | null; timestamp: string }>;
+  metadata: ValuationMetadata | null;
+}
+
+const OP_LABELS: Record<string, string> = {
+  'private.dcf': 'Discounted cash flow',
+  'private.comps': 'Comparable companies',
+  'private.lbo': 'Buyout (LBO) model',
+  'private.ml_adjustment': 'Machine-learning adjustment',
+  'private.blended_valuation': 'Blended valuation',
+};
+
+const METHOD_LABELS: Record<'dcf' | 'comps' | 'lbo', string> = {
+  dcf: 'Discounted cash flow',
+  comps: 'Comparable companies',
+  lbo: 'Buyout (LBO) model',
+};
+
+const fmtUsd = (n: number): string => {
+  if (Math.abs(n) >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
+  if (Math.abs(n) >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
+  return `$${Math.round(n).toLocaleString()}`;
+};
+
+async function fetchLatest(id: string): Promise<LatestValuationResponse | null> {
+  try {
+    return await apiGet<LatestValuationResponse>(`/v1/private/value-live/latest/${id}`);
+  } catch {
+    // 404 (no valuation yet) or API unreachable — both fall through to the
+    // empty state, which lets the reader trigger a fresh run.
+    return null;
+  }
+}
 
 export default async function PrivateCompany({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const company = getPrivateCompany(id);
-  if (!company) notFound();
+  const fallback = getPrivateCompany(id);
+  if (!fallback) notFound();
+
+  const data = await fetchLatest(id);
+
+  // ── Empty state — no valuation persisted yet ──────────────────────────
+  if (!data) {
+    return (
+      <article className="grid grid-cols-12 gap-x-10 gap-y-10">
+        <header className="col-span-12 border-b border-ink-100 pb-10">
+          <p className="eyebrow mb-3">
+            {fallback.lifeStage} · {fallback.sector} · Private company
+          </p>
+          <h1 className="font-display text-6xl tracking-editorial leading-tight mb-6">
+            {fallback.name}
+          </h1>
+        </header>
+        <section className="col-span-12 lg:col-span-8 space-y-6">
+          <p className="eyebrow">No valuation yet</p>
+          <p className="font-serif text-deck text-ink-800 max-w-measure leading-relaxed">
+            We haven&apos;t valued {fallback.name} yet. A fresh run pulls every input live —
+            peer financials, macro rates, engineering velocity, patent and funding activity, and
+            an LLM-extracted revenue base — then values the company three ways and blends them.
+          </p>
+          <RunValuationButton companyId={id} />
+        </section>
+      </article>
+    );
+  }
+
+  // ── Success state — render the persisted live valuation ───────────────
+  const meta = data.metadata ?? data.signal.metadata ?? {};
+  const name = meta.companyName ?? fallback.name;
+  const lifeStage = meta.lifeStage ?? fallback.lifeStage;
+  const confidence = meta.confidence ?? data.signal.confidence;
+  const valuation = meta.finalValuation ?? { bear: 0, base: 0, bull: 0 };
+  const weights = meta.weights ?? { dcf: 0, comps: 0, lbo: 0 };
+  const revenueIntel = meta.revenueIntel;
+
+  const resultByMethod = new Map((meta.methodResults ?? []).map((r) => [r.method, r]));
+  const methods: MethodWeight[] = (['dcf', 'comps', 'lbo'] as const).map((m) => {
+    const weight = weights[m] ?? 0;
+    const result = resultByMethod.get(m);
+    const why =
+      weight === 0
+        ? result
+          ? 'Set aside — confidence below the floor for the blend.'
+          : 'Not run — inputs unavailable for this method.'
+        : (result?.rationale ?? 'Contributed to the blended valuation.');
+    return { method: METHOD_LABELS[m], weight, why };
+  });
+
+  const lineage: AuditStep[] = data.lineage.map((step) => ({
+    step: step.step,
+    label: OP_LABELS[step.op] ?? step.op,
+    op: step.op,
+    weight: step.weight,
+    ts: step.timestamp,
+  }));
+
+  const spread = valuation.bear > 0 ? valuation.bull / valuation.bear : 1;
+  const read = spread > 3 ? 'Wide Range' : spread > 1.8 ? 'Moderate Range' : 'Tight Range';
+
+  const readPlain =
+    `A blended valuation of ${fmtUsd(valuation.base)} — ranging from ${fmtUsd(valuation.bear)} ` +
+    `on the cautious case to ${fmtUsd(valuation.bull)} on the optimistic one.`;
+
+  const rationale =
+    'This is a live valuation: every input was pulled fresh and run through a discounted ' +
+    'cash-flow model, a comparable-companies analysis, and a buyout model, then blended by ' +
+    'life stage. ' +
+    (revenueIntel?.revenueSource
+      ? `The revenue base came from ${revenueIntel.revenueSource} (${revenueIntel.revenueConfidence} confidence).`
+      : 'The revenue base came from live company research.') +
+    (revenueIntel?.growthCommentary ? ` ${revenueIntel.growthCommentary}` : '');
 
   return (
     <article className="grid grid-cols-12 gap-x-10 gap-y-10">
       <header className="col-span-12 border-b border-ink-100 pb-10">
-        <p className="eyebrow mb-3">{company.lifeStage} · {company.sector} · Private company</p>
-        <h1 className="font-display text-6xl tracking-editorial leading-tight mb-6">{company.name}</h1>
-        <p className="font-mono text-sm text-ink-500">As of {company.asOf}</p>
+        <p className="eyebrow mb-3">
+          {lifeStage} · {fallback.sector} · Private company
+        </p>
+        <h1 className="font-display text-6xl tracking-editorial leading-tight mb-6">{name}</h1>
+        <p className="font-mono text-sm text-ink-500">As of {formatDate(data.signal.timestamp)}</p>
       </header>
 
       <section className="col-span-12 lg:col-span-8 space-y-12">
         <SignalLabel
-          label={company.read}
-          readPlain={company.readPlain}
-          direction={company.direction}
-          confidence={company.confidence}
+          label={read}
+          readPlain={readPlain}
+          direction={data.signal.direction}
+          confidence={confidence}
         />
 
-        <ValuationBand
-          bear={company.valuation.bear}
-          base={company.valuation.base}
-          bull={company.valuation.bull}
-        />
+        <ValuationBand bear={valuation.bear} base={valuation.base} bull={valuation.bull} />
+
+        {revenueIntel && (
+          <div>
+            <p className="eyebrow mb-2">Revenue base</p>
+            <p className="font-sans text-xs text-ink-700 mb-4 leading-snug max-w-measure">
+              Private companies don&apos;t report publicly — this is the revenue figure the
+              valuation is anchored to, pulled from live company research.
+            </p>
+            <div className="font-mono text-sm text-ink-900 space-y-1">
+              <p>
+                {revenueIntel.revenueLtmUsd === null
+                  ? 'n/a'
+                  : `${fmtUsd(revenueIntel.revenueLtmUsd)} LTM`}
+              </p>
+              <p className="text-ink-500">
+                confidence: {revenueIntel.revenueConfidence} · as of{' '}
+                {revenueIntel.revenueAsOfMonth ?? 'unknown'}
+              </p>
+            </div>
+          </div>
+        )}
 
         <div>
           <p className="eyebrow mb-2">How we valued it</p>
           <p className="font-sans text-xs text-ink-700 mb-4 leading-snug max-w-measure">
-            Private companies have no stock price, so we value them three ways and weight whichever methods
-            actually fit this business.
+            Private companies have no stock price, so we value them three ways and weight whichever
+            methods actually fit this business.
           </p>
           <table className="editorial-table">
             <thead>
@@ -46,7 +214,7 @@ export default async function PrivateCompany({ params }: { params: Promise<{ id:
               </tr>
             </thead>
             <tbody>
-              {company.methods.map((m) => (
+              {methods.map((m) => (
                 <tr key={m.method}>
                   <td className="font-serif align-top">{m.method}</td>
                   <td className="num align-top">{(m.weight * 100).toFixed(0)}%</td>
@@ -67,14 +235,14 @@ export default async function PrivateCompany({ params }: { params: Promise<{ id:
 
         <div>
           <p className="eyebrow mb-4">Why we landed there</p>
-          <p className="font-serif text-deck text-ink-800 max-w-measure leading-relaxed">
-            {company.rationale}
+          <p className="font-serif text-base text-ink-800 max-w-measure leading-relaxed">
+            {rationale}
           </p>
         </div>
       </section>
 
       <aside className="col-span-12 lg:col-span-4 lg:border-l lg:border-ink-100 lg:pl-10">
-        <AuditChain steps={company.lineage} />
+        <AuditChain steps={lineage} />
       </aside>
     </article>
   );

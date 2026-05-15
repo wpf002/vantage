@@ -6,9 +6,10 @@ import { computePublicScore } from '@vantage/core-public';
 import { runDcf, runComps, runLbo, blendValuations } from '@vantage/core-private';
 import { FmpClient } from '@vantage/data-ingest/public';
 import type { LifeStage } from '@vantage/shared';
+import { valuePrivateLive } from './commands/value-private-live.js';
 
 const program = new Command();
-program.name('vantage').description('Vantage admin & batch CLI').version('0.1.0');
+program.name('vantage').description('Vantage admin & batch CLI').version('0.2.0');
 
 // ── score-public --------------------------------------------------------
 program
@@ -60,6 +61,16 @@ program
       fmp.priceTarget(opts.ticker),
     ]);
     process.stdout.write(JSON.stringify({ profile, earnings, target }, null, 2) + '\n');
+  });
+
+// ── value-private-live --------------------------------------------------
+program
+  .command('value-private-live')
+  .description('Run the live private-valuation orchestrator for a seeded company')
+  .requiredOption('--company <name>', 'company name (matches infra/seeds/companies.json)')
+  .option('--seeds <dir>', 'seeds directory', './infra/seeds')
+  .action(async (opts) => {
+    await valuePrivateLive({ company: opts.company, seeds: opts.seeds });
   });
 
 // ── health --------------------------------------------------------------

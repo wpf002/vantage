@@ -168,6 +168,9 @@ importers:
 
   packages/core-private:
     dependencies:
+      '@vantage/data-ingest':
+        specifier: workspace:*
+        version: link:../data-ingest
       '@vantage/shared':
         specifier: workspace:*
         version: link:../shared

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { SignalLabel } from '@/components/SignalLabel';
 import { AuditChain } from '@/components/AuditChain';
 import { getPublicCompany } from '@/lib/companies';
+import { formatDate } from '@/lib/format';
 
 export default async function PublicTicker({ params }: { params: Promise<{ ticker: string }> }) {
   const { ticker } = await params;
@@ -13,7 +14,7 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
       <header className="col-span-12 border-b border-ink-100 pb-10">
         <p className="eyebrow mb-3">{company.ticker} · {company.sector} · Public company</p>
         <h1 className="font-display text-6xl tracking-editorial leading-tight mb-6">{company.name}</h1>
-        <p className="font-mono text-sm text-ink-500">As of {company.asOf}</p>
+        <p className="font-mono text-sm text-ink-500">As of {formatDate(company.asOf)}</p>
       </header>
 
       <section className="col-span-12 lg:col-span-8 space-y-12">

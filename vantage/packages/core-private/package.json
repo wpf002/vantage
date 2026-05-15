@@ -1,17 +1,18 @@
 {
   "name": "@vantage/core-private",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./dcf": "./src/dcf/index.ts",
-    "./comps": "./src/comps/index.ts",
-    "./lbo": "./src/lbo/index.ts",
-    "./blend": "./src/blend/index.ts",
-    "./ml-bridge": "./src/ml-bridge/index.ts"
+    ".": "./dist/index.js",
+    "./dcf": "./dist/dcf/index.js",
+    "./comps": "./dist/comps/index.js",
+    "./lbo": "./dist/lbo/index.js",
+    "./blend": "./dist/blend/index.js",
+    "./ml-bridge": "./dist/ml-bridge/index.js",
+    "./orchestrator": "./dist/orchestrator/index.js"
   },
   "scripts": {
     "build": "tsc -b",
@@ -21,6 +22,7 @@
     "clean": "rm -rf dist .turbo *.tsbuildinfo"
   },
   "dependencies": {
+    "@vantage/data-ingest": "workspace:*",
     "@vantage/shared": "workspace:*",
     "zod": "^3.23.0"
   },

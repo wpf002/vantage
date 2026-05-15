@@ -3,14 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./signals": "./src/signals.ts",
-    "./classes": "./src/classes.ts",
-    "./companies": "./src/companies.ts",
-    "./errors": "./src/errors.ts"
+    ".": "./dist/index.js",
+    "./signals": "./dist/signals.js",
+    "./classes": "./dist/classes.js",
+    "./companies": "./dist/companies.js",
+    "./errors": "./dist/errors.js"
   },
   "scripts": {
     "build": "tsc -b",

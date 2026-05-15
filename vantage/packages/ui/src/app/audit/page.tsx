@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Route } from 'next';
 import { listAuditRecords } from '@/lib/audit';
+import { formatDate } from '@/lib/format';
 
 export default function SourcesPage() {
   const records = listAuditRecords();
@@ -34,7 +35,7 @@ export default function SourcesPage() {
               <td className="font-serif">{r.entity}</td>
               <td className="font-sans text-sm text-ink-700">{r.what}</td>
               <td className="num">{(r.confidence * 100).toFixed(0)}%</td>
-              <td className="font-mono text-xs text-ink-500">{r.date}</td>
+              <td className="font-mono text-xs text-ink-500">{formatDate(r.date)}</td>
               <td className="num">
                 <Link
                   href={`/audit/${r.id}` as Route}

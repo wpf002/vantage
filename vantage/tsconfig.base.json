@@ -20,7 +20,8 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "incremental": true
+    "incremental": true,
+    "composite": true
   },
   "exclude": ["node_modules", "dist", ".next", ".turbo"]
 }

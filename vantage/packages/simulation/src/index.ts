@@ -123,18 +123,18 @@ export function runMonteCarlo(input: MonteCarloInputs): MonteCarloResult {
 
 // ─── Scenario tree ────────────────────────────────────────────────────────
 
-export const ScenarioNode = z.object({
-  name: z.string(),
-  probability: z.number().min(0).max(1),
-  impact: z.number(), // multiplicative portfolio impact at this node
-  children: z.array(z.lazy(() => ScenarioNode)).optional(),
-});
 export type ScenarioNode = {
   name: string;
   probability: number;
   impact: number;
   children?: ScenarioNode[];
 };
+export const ScenarioNode: z.ZodType<ScenarioNode> = z.object({
+  name: z.string(),
+  probability: z.number().min(0).max(1),
+  impact: z.number(), // multiplicative portfolio impact at this node
+  children: z.array(z.lazy(() => ScenarioNode)).optional(),
+});
 
 export interface ScenarioResult {
   expectedImpact: number;

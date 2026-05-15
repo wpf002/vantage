@@ -77,5 +77,6 @@ export function runComps(input: CompsInputs): ValuationMethodResult {
       peerCount: validated.peers.length,
       coefficientOfVariation: cv,
     },
+    warnings: confidence < 0.3 ? ['confidence below floor — exclude from blend'] : [],
   };
 }

@@ -68,5 +68,6 @@ export function runLbo(input: LboInputs): ValuationMethodResult {
       requiredEntryEquity,
       annualFcf,
     },
+    warnings: confidence < 0.3 ? ['confidence below floor — exclude from blend'] : [],
   };
 }

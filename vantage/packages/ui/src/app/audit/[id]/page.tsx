@@ -3,6 +3,7 @@ import type { Route } from 'next';
 import { notFound } from 'next/navigation';
 import { AuditChain } from '@/components/AuditChain';
 import { getAuditRecord } from '@/lib/audit';
+import { formatDate } from '@/lib/format';
 
 export default async function AuditRecordPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -34,7 +35,7 @@ export default async function AuditRecordPage({ params }: { params: Promise<{ id
           </div>
           <div>
             <p className="eyebrow mb-1">Date</p>
-            <p className="font-mono text-2xl text-ink-900">{record.date}</p>
+            <p className="font-mono text-2xl text-ink-900">{formatDate(record.date)}</p>
             <p className="font-sans text-xs text-ink-700 mt-1 max-w-[16rem] leading-snug">
               When this read was produced. Inputs change over time, so the date is part of the record.
             </p>

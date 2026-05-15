@@ -1,0 +1,20 @@
+[
+  {
+    "companyName": "Anthropic, PBC",
+    "peerTickers": ["NVDA", "PLTR", "SNOW", "MDB", "ARM", "CRWD"],
+    "illiquidityDiscount": 0.25,
+    "notes": "Public AI-infrastructure and high-multiple software names that the market prices on growth and compute exposure rather than near-term earnings — the closest listed analogues to a frontier-model lab."
+  },
+  {
+    "companyName": "Stripe, Inc.",
+    "peerTickers": ["V", "MA", "PYPL", "GPN", "FIS", "FI", "TOST"],
+    "illiquidityDiscount": 0.2,
+    "notes": "Card networks and payment processors that share Stripe's take-rate economics and volume-driven revenue; GPN stands in for Adyen, which needs FMP global coverage (Starter is US-only). Lower illiquidity discount reflects Stripe's pre-IPO scale."
+  },
+  {
+    "companyName": "Databricks, Inc.",
+    "peerTickers": ["SNOW", "MDB", "DDOG", "CFLT", "ESTC", "PLTR"],
+    "illiquidityDiscount": 0.22,
+    "notes": "Cloud data-platform and consumption-revenue software peers — Snowflake and Confluent are the most direct lakehouse/streaming analogues, with Datadog and Elastic rounding out the data-tooling comp set."
+  }
+]

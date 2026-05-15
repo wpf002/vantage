@@ -70,7 +70,12 @@ export function constructPortfolio(
   });
 
   const allocations: Allocation[] = [];
-  const sleeveUsed: Record<string, number> = { core: 0, growth: 0, defensive: 0, tactical: 0 };
+  const sleeveUsed: Record<'core' | 'growth' | 'defensive' | 'tactical', number> = {
+    core: 0,
+    growth: 0,
+    defensive: 0,
+    tactical: 0,
+  };
   const sectorUsed = new Map<string, number>();
   const warnings: string[] = [];
 
