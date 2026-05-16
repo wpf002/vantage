@@ -1,6 +1,6 @@
 {
   "name": "@vantage/cli",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
   "bin": {
@@ -22,6 +22,7 @@
     "@vantage/data-ingest": "workspace:*",
     "@vantage/portfolio": "workspace:*",
     "@vantage/shared": "workspace:*",
+    "@vantage/simulation": "workspace:*",
     "commander": "^12.1.0",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.36.0",

@@ -47,7 +47,7 @@ export default async function AuditRecordPage({ params }: { params: Promise<{ id
             href={record.entityHref as Route}
             className="inline-block font-sans text-sm text-editorial hover:underline"
           >
-            See the full page for {record.entity} →
+            Full Page →
           </Link>
         )}
       </section>

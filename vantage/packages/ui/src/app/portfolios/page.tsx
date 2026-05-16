@@ -23,9 +23,7 @@ export default async function PortfoliosIndex() {
   return (
     <div className="grid grid-cols-12 gap-x-10 gap-y-12">
       <header className="col-span-12 border-b border-ink-100 pb-10">
-        <p className="eyebrow mb-3">Portfolios</p>
-        <h1 className="font-display text-5xl tracking-editorial">Portfolios</h1>
-        <p className="font-serif text-deck text-ink-700 max-w-measure mt-6">
+        <p className="font-serif text-deck text-ink-700 max-w-measure">
           Default — rebuilt nightly from current classifications. Your own — sized to your
           constraints.
         </p>

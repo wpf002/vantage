@@ -7,6 +7,7 @@ import { apiServerGetNullable, apiServerPost, apiServerDelete } from '@/lib/api-
 import type { PortfolioDetail } from '@/lib/portfolios';
 import { PortfolioDetailView } from '@/components/PortfolioDetail';
 import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton';
+import { SimulationsSection } from '@/components/SimulationsSection';
 import { formatDate } from '@/lib/format';
 
 interface PageProps {
@@ -53,7 +54,6 @@ export default async function PortfolioByIdPage({ params, searchParams }: PagePr
   return (
     <div className="grid grid-cols-12 gap-x-10 gap-y-12">
       <header className="col-span-12 border-b border-ink-100 pb-10">
-        <p className="eyebrow mb-3">Personal Portfolio</p>
         <h1 className="font-display text-5xl tracking-editorial">{portfolio.name}</h1>
         <p className="font-mono text-eyebrow uppercase text-ink-900 tracking-wider mt-6">
           Built {formatDate(portfolio.asOf)}
@@ -73,6 +73,10 @@ export default async function PortfolioByIdPage({ params, searchParams }: PagePr
 
       <div className="col-span-12">
         <PortfolioDetailView portfolio={portfolio} />
+      </div>
+
+      <div className="col-span-12 border-t border-ink-100 pt-10">
+        <SimulationsSection portfolioId={portfolio.id} />
       </div>
 
       {isOwner ? (

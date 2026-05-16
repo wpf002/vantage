@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Playfair_Display, Source_Serif_4, Inter, IBM_Plex_Mono } from 'next/font/google';
 import { Header } from '@/components/Header';
+import { SideNav } from '@/components/SideNav';
 import '@/styles/globals.css';
 
 const display = Playfair_Display({
@@ -34,15 +35,35 @@ export const metadata: Metadata = {
     'Sector-agnostic financial intelligence. Private and public scoring, classification, portfolio construction, simulation — with full audit lineage.',
 };
 
+/**
+ * App shell. The viewport is split into three regions with explicit heights:
+ *
+ *   ┌─────────────────────────────────────┐
+ *   │ Header (fixed height, never scrolls)│
+ *   ├─────────┬───────────────────────────┤
+ *   │ SideNav │ Main (scrolls vertically) │
+ *   │ (full   │                           │
+ *   │  height)│                           │
+ *   └─────────┴───────────────────────────┘
+ *
+ * Header has a known height; the flex row below it fills the rest of the
+ * viewport so the sidebar always sits flush under the header — no gap, no
+ * sticky-offset math.
+ */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
       className={`${display.variable} ${serif.variable} ${sans.variable} ${mono.variable}`}
     >
-      <body>
+      <body className="h-screen overflow-hidden flex flex-col">
         <Header />
-        <main className="mx-auto max-w-page px-6 py-12">{children}</main>
+        <div className="flex flex-1 min-h-0">
+          <SideNav />
+          <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-6 py-10 lg:px-12 lg:py-12">
+            {children}
+          </main>
+        </div>
       </body>
     </html>
   );

@@ -2,6 +2,9 @@ import { z } from 'zod';
 import { ENGINE_VERSIONS, type Signal } from '@vantage/shared';
 import type { Allocation } from '@vantage/portfolio';
 
+export * from './assumptions.js';
+export * from './percentileFan.js';
+
 /**
  * Simulation sandbox.
  *

@@ -10,9 +10,10 @@ import { valuePrivateLive } from './commands/value-private-live.js';
 import { scorePublicLive } from './commands/score-public-live.js';
 import { classifyStatus } from './commands/classify-status.js';
 import { portfolioBuild } from './commands/portfolio-build.js';
+import { simulate } from './commands/simulate.js';
 
 const program = new Command();
-program.name('vantage').description('Vantage admin & batch CLI').version('0.5.0');
+program.name('vantage').description('Vantage admin & batch CLI').version('0.6.0');
 
 // ── score-public --------------------------------------------------------
 program
@@ -105,6 +106,29 @@ program
   .action(async (opts) => {
     const kind = opts.kind === 'personal' ? 'personal' : 'system';
     await portfolioBuild({ name: opts.name, kind, owner: opts.owner });
+  });
+
+// ── simulate ------------------------------------------------------------
+program
+  .command('simulate')
+  .description('Run a Monte Carlo simulation against a portfolio (direct DB)')
+  .requiredOption('--portfolio <portfolioId>', 'portfolio UUID')
+  .option('--kind <kind>', 'monte_carlo | scenario_tree | regime_switching', 'monte_carlo')
+  .option('--horizon <years>', 'horizon in years', '5')
+  .option('--paths <count>', 'simulated paths', '10000')
+  .option('--seed <number>', 'seed for deterministic runs')
+  .action(async (opts) => {
+    const kind = (opts.kind ?? 'monte_carlo') as
+      | 'monte_carlo'
+      | 'scenario_tree'
+      | 'regime_switching';
+    await simulate({
+      portfolio: opts.portfolio,
+      kind,
+      horizon: Number(opts.horizon ?? 5),
+      paths: Number(opts.paths ?? 10000),
+      seed: opts.seed === undefined ? undefined : Number(opts.seed),
+    });
   });
 
 // ── health --------------------------------------------------------------

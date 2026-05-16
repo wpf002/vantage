@@ -48,7 +48,7 @@ export default function Home() {
       {/* Below-fold: how it works */}
       <section className="col-span-12 pt-4">
         <p className="eyebrow pb-4 mb-8 border-b border-ink-100">How It Works</p>
-        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-ink-100">
+        <div className="flex flex-col divide-y divide-ink-100">
           <ExplainerColumn
             eyebrow="Public Companies"
             headline="Is the price ahead of the business?"
@@ -88,7 +88,7 @@ function SearchBar() {
         type="text"
         name="q"
         placeholder="Search a ticker or company name…"
-        className="flex-1 bg-transparent font-serif text-xl placeholder:text-ink-300 focus:outline-none"
+        className="flex-1 min-w-0 bg-transparent font-serif text-xl placeholder:text-ink-300 focus:outline-none"
       />
       <button type="submit" className="font-sans text-sm uppercase tracking-wider text-ink-900 hover:text-editorial">
         Look It Up →
@@ -99,7 +99,7 @@ function SearchBar() {
 
 function ExplainerColumn({ eyebrow, headline, body }: { eyebrow: string; headline: string; body: string }) {
   return (
-    <div className="py-8 first:pt-0 last:pb-0 md:py-0 md:px-8 md:first:pl-0 md:last:pr-0">
+    <div className="py-8 first:pt-0 last:pb-0">
       <p className="eyebrow mb-3">{eyebrow}</p>
       <h3 className="font-display text-2xl mb-3 tracking-tight">{headline}</h3>
       <p className="font-serif text-ink-800 leading-relaxed">{body}</p>

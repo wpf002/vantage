@@ -126,7 +126,7 @@ export async function signInWithPassword(
   if (!ok) throw new CredentialsError('Wrong email or password.');
 
   const userId = rows[0]!.id;
-  // Refresh last-seen so /account stays accurate after a fresh sign-in.
+  // Refresh last-seen so /settings stays accurate after a fresh sign-in.
   await db
     .update(authSchema.users)
     .set({ lastSeenAt: new Date() })

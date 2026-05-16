@@ -9,11 +9,7 @@ export default function SourcesPage() {
   return (
     <div>
       <header className="border-b border-ink-100 pb-10 mb-8">
-        <p className="eyebrow mb-3">Sources</p>
-        <h1 className="font-display text-5xl tracking-editorial">
-          Every read traces back to its inputs.
-        </h1>
-        <p className="font-serif text-deck text-ink-700 max-w-measure mt-6">
+        <p className="font-serif text-deck text-ink-700 max-w-measure">
           This is the record of every read Vantage has produced. Open any one to see the exact
           steps behind it — which methods ran, what each one was weighted, and what went in.
         </p>

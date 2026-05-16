@@ -1,14 +1,14 @@
 import { redirect } from 'next/navigation';
 import type { Route } from 'next';
 import { eq } from 'drizzle-orm';
-import { auth, signOut } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import { db, authSchema } from '@/lib/db';
 import { formatDate } from '@/lib/format';
 
-export default async function AccountPage() {
+export default async function SettingsPage() {
   const session = await auth();
   if (!session?.user?.id) {
-    redirect('/signin?callbackUrl=/account' as Route);
+    redirect('/signin?callbackUrl=/settings' as Route);
   }
 
   const rows = await db
@@ -23,18 +23,8 @@ export default async function AccountPage() {
     .limit(1);
   const u = rows[0];
 
-  async function signOutAction() {
-    'use server';
-    await signOut({ redirectTo: '/' });
-  }
-
   return (
     <div className="grid grid-cols-12 gap-x-10 gap-y-10">
-      <header className="col-span-12 lg:col-span-8 border-b border-ink-100 pb-10">
-        <p className="eyebrow mb-3">Account</p>
-        <h1 className="font-display text-5xl tracking-editorial">Your Account</h1>
-      </header>
-
       <section className="col-span-12 lg:col-span-8">
         <table className="editorial-table">
           <tbody>
@@ -52,17 +42,6 @@ export default async function AccountPage() {
             </tr>
           </tbody>
         </table>
-      </section>
-
-      <section className="col-span-12 lg:col-span-8">
-        <form action={signOutAction}>
-          <button
-            type="submit"
-            className="font-display text-xl text-editorial border-b-2 border-editorial hover:text-editorial-dark hover:border-editorial-dark transition-colors"
-          >
-            Sign Out &rarr;
-          </button>
-        </form>
       </section>
     </div>
   );

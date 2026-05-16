@@ -129,10 +129,6 @@ export default async function ClassificationsPage({
   return (
     <article className="grid grid-cols-12 gap-x-10 gap-y-10">
       <header className="col-span-12 border-b border-ink-100 pb-10">
-        <p className="eyebrow mb-3">Classifications</p>
-        <h1 className="font-display text-6xl tracking-editorial leading-tight mb-6">
-          Classifications
-        </h1>
         <p className="font-serif text-deck text-ink-800 max-w-measure leading-relaxed">
           Every company we&apos;ve scored, sorted into one of four buckets based on its signals.
         </p>

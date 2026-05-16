@@ -26,3 +26,14 @@ export {
   type PortfolioListItem,
 } from './db/portfolioStore.js';
 export { rebuildSystemPortfolio } from './jobs/systemPortfolio.js';
+export {
+  persistSimulation,
+  getSimulationById,
+  listPortfolioSimulations,
+  type SimulationKind,
+  type PortfolioSimulationListItem,
+  type SimulationRow,
+  type MonteCarloOutputsBlob,
+  type PersistSimulationParams,
+  type PersistSimulationResult,
+} from './db/simulationStore.js';
