@@ -29,7 +29,7 @@ export default async function PortfoliosIndex() {
         </p>
       </header>
 
-      <section className="col-span-12 border-b border-ink-100 pb-10">
+      <section className="col-span-12">
         <div className="flex items-baseline justify-between mb-4">
           <p className="eyebrow">Default</p>
           <Link

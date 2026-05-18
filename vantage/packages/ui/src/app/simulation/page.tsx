@@ -7,7 +7,15 @@ import type { PortfolioDetail, PortfolioListItem } from '@/lib/portfolios';
 import { formatPercent, sleeveLabel } from '@/lib/portfolios';
 
 interface PageProps {
-  searchParams: Promise<{ portfolio?: string; error?: string }>;
+  searchParams: Promise<{
+    portfolio?: string;
+    error?: string;
+    kind?: string;
+    horizon?: string;
+    paths?: string;
+    seed?: string;
+    replay?: string;
+  }>;
 }
 
 const SLEEVES: Array<'core' | 'growth' | 'defensive' | 'tactical'> = [
@@ -17,13 +25,23 @@ const SLEEVES: Array<'core' | 'growth' | 'defensive' | 'tactical'> = [
   'tactical',
 ];
 
+const HORIZON_DEFAULT = 5;
+const PATHS_DEFAULT = 10_000;
+
 export default async function SimulationPickerPage({ searchParams }: PageProps) {
   const session = await auth();
   if (!session?.user?.id) {
     redirect('/signin?callbackUrl=/simulation' as Route);
   }
 
-  const { portfolio: prefilledPortfolio, error } = await searchParams;
+  const sp = await searchParams;
+  const prefilledPortfolio = sp.portfolio;
+  const error = sp.error;
+  const replay = sp.replay === '1';
+  const prefillKind = sp.kind === 'monte_carlo' ? 'monte_carlo' : 'monte_carlo';
+  const prefillHorizon = clampInt(sp.horizon, 1, 30, HORIZON_DEFAULT);
+  const prefillPaths = clampInt(sp.paths, 100, 100_000, PATHS_DEFAULT);
+  const prefillSeed = sp.seed && sp.seed.trim() !== '' ? sp.seed : '';
 
   const [systemPortfolio, mine] = await Promise.all([
     apiServerGetNullable<PortfolioDetail>('/v1/portfolios/system'),
@@ -72,11 +90,11 @@ export default async function SimulationPickerPage({ searchParams }: PageProps) 
     const kind = String(formData.get('kind') ?? 'monte_carlo').trim();
     if (kind !== 'monte_carlo') {
       redirect(
-        `/simulation?portfolio=${portfolioId}&error=${encodeURIComponent('Only Monte Carlo is available in this phase')}` as Route,
+        `/simulation?portfolio=${portfolioId}&error=${encodeURIComponent('Only Monte Carlo runs through this picker')}` as Route,
       );
     }
-    const horizon = Math.max(1, Math.min(30, Number(formData.get('horizon') ?? 5)));
-    const paths = Math.max(100, Math.min(100_000, Number(formData.get('paths') ?? 10_000)));
+    const horizon = clampInt(formData.get('horizon'), 1, 30, HORIZON_DEFAULT);
+    const paths = clampInt(formData.get('paths'), 100, 100_000, PATHS_DEFAULT);
     const seedRaw = String(formData.get('seed') ?? '').trim();
     const seed = seedRaw === '' ? undefined : Number(seedRaw);
 
@@ -106,9 +124,20 @@ export default async function SimulationPickerPage({ searchParams }: PageProps) 
     <div className="grid grid-cols-12 gap-x-10 gap-y-10">
       <header className="col-span-12 border-b border-ink-100 pb-10">
         <p className="font-serif text-deck text-ink-700 max-w-measure">
-          Pick a portfolio. Pick a model. See how the next five years might play out.
+          Stress-test portfolio performance across market scenarios.
         </p>
       </header>
+
+      {replay ? (
+        <div className="col-span-12">
+          <div className="bg-cream-200 border-l-2 border-editorial pl-6 py-5 max-w-3xl">
+            <p className="eyebrow mb-2">Replay</p>
+            <p className="font-serif text-base text-ink-800 leading-relaxed">
+              Pre-filled from a previous run. Identical seed and inputs produce identical output.
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       {error ? (
         <div className="col-span-12">
@@ -119,19 +148,19 @@ export default async function SimulationPickerPage({ searchParams }: PageProps) 
       {options.length === 0 ? (
         <section className="col-span-12">
           <p className="font-serif italic text-ink-700 max-w-measure">
-            No portfolios available yet.{' '}
+            No portfolios yet —{' '}
             <Link href={'/portfolios/new' as Route} className="text-editorial hover:underline">
-              Build one
+              build one
             </Link>{' '}
-            and come back.
+            first.
           </p>
         </section>
       ) : (
         <form action={runAction} className="col-span-12 space-y-12">
           {/* ── Pick a portfolio ─────────────────────────────────────── */}
-          <section className="border-b border-ink-100 pb-10">
-            <p className="eyebrow mb-4">Pick A Portfolio</p>
-            <div className="space-y-4">
+          <section>
+            <p className="eyebrow mb-4">Portfolio</p>
+            <div className="divide-y divide-ink-100">
               {options.map((opt) => (
                 <label
                   key={opt.id}
@@ -170,26 +199,25 @@ export default async function SimulationPickerPage({ searchParams }: PageProps) 
 
           {/* ── Pick a model ─────────────────────────────────────────── */}
           <section className="border-b border-ink-100 pb-10">
-            <p className="eyebrow mb-4">Pick A Model</p>
+            <p className="eyebrow mb-4">Model</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <ModelCard
+              <ModelCardRadio
                 value="monte_carlo"
                 label="Monte Carlo"
-                description="Ten thousand simulated paths."
-                disabled={false}
-                defaultChecked
+                description="10,000 stochastic paths."
+                defaultChecked={prefillKind === 'monte_carlo'}
               />
-              <ModelCard
-                value="scenario_tree"
+              <ModelCardLink
+                href="/simulation/scenario-builder"
                 label="Scenario Tree"
-                description="Discrete probability branching."
-                disabled
+                description="Discrete scenario branching."
+                cta="Open Builder"
               />
-              <ModelCard
-                value="regime_switching"
+              <ModelCardLink
+                href="/simulation/regime-builder"
                 label="Regime Switching"
-                description="Markov-style transitions between market regimes."
-                disabled
+                description="Markov transitions across market regimes."
+                cta="Open Builder"
               />
             </div>
           </section>
@@ -210,7 +238,7 @@ export default async function SimulationPickerPage({ searchParams }: PageProps) 
                     min={1}
                     max={30}
                     step={1}
-                    defaultValue={5}
+                    defaultValue={prefillHorizon}
                     className="w-20 bg-transparent border-0 border-b border-ink-300 focus:border-editorial focus:outline-none font-mono text-lg py-2 px-0 text-right"
                   />
                   <span className="font-mono text-sm text-ink-500">yrs</span>
@@ -227,7 +255,7 @@ export default async function SimulationPickerPage({ searchParams }: PageProps) 
                   min={100}
                   max={100_000}
                   step={100}
-                  defaultValue={10_000}
+                  defaultValue={prefillPaths}
                   className="w-32 bg-transparent border-0 border-b border-ink-300 focus:border-editorial focus:outline-none font-mono text-lg py-2 px-0 text-right"
                 />
               </div>
@@ -240,14 +268,15 @@ export default async function SimulationPickerPage({ searchParams }: PageProps) 
                   name="seed"
                   type="number"
                   placeholder="random"
+                  defaultValue={prefillSeed}
                   className="w-32 bg-transparent border-0 border-b border-ink-300 focus:border-editorial focus:outline-none font-mono text-lg py-2 px-0 text-right placeholder:text-ink-300"
                 />
-                <p className="font-sans text-xs text-ink-700 mt-2">
-                  Leave blank for random.
-                </p>
+                <p className="font-sans text-xs text-ink-700 mt-2">Blank = random.</p>
               </div>
             </div>
           </section>
+
+          <hr className="border-ink-100" />
 
           <button
             type="submit"
@@ -261,30 +290,17 @@ export default async function SimulationPickerPage({ searchParams }: PageProps) 
   );
 }
 
-function ModelCard({
+function ModelCardRadio({
   value,
   label,
   description,
-  disabled,
   defaultChecked,
 }: {
   value: string;
   label: string;
   description: string;
-  disabled?: boolean;
   defaultChecked?: boolean;
 }) {
-  if (disabled) {
-    return (
-      <div className="border border-ink-100 p-6 opacity-50 cursor-not-allowed">
-        <p className="font-display text-xl tracking-tight">{label}</p>
-        <p className="font-serif text-sm text-ink-700 mt-2">{description}</p>
-        <p className="font-mono text-eyebrow uppercase tracking-wider text-ink-500 mt-4">
-          Coming Soon
-        </p>
-      </div>
-    );
-  }
   return (
     <label className="block cursor-pointer group" htmlFor={`kind-${value}`}>
       <input
@@ -303,4 +319,37 @@ function ModelCard({
       </div>
     </label>
   );
+}
+
+function ModelCardLink({
+  href,
+  label,
+  description,
+  cta,
+}: {
+  href: string;
+  label: string;
+  description: string;
+  cta: string;
+}) {
+  return (
+    <Link
+      href={href as Route}
+      className="block border border-ink-100 p-6 h-full hover:border-editorial transition-colors group"
+    >
+      <p className="font-display text-xl tracking-tight text-ink-900 group-hover:text-editorial">
+        {label}
+      </p>
+      <p className="font-serif text-sm text-ink-700 mt-2">{description}</p>
+      <p className="font-sans text-eyebrow uppercase tracking-wider text-editorial mt-4">
+        {cta} &rarr;
+      </p>
+    </Link>
+  );
+}
+
+function clampInt(raw: unknown, min: number, max: number, fallback: number): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, Math.round(n)));
 }

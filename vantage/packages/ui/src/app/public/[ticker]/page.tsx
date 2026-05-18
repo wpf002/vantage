@@ -1,3 +1,5 @@
+import Link from 'next/link';
+import type { Route } from 'next';
 import { SignalLabel } from '@/components/SignalLabel';
 import { AuditChain } from '@/components/AuditChain';
 import type { AuditStep, Direction } from '@/lib/companies';
@@ -206,10 +208,10 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
         <section className="col-span-12 lg:col-span-8 space-y-6">
           <p className="eyebrow">No score yet</p>
           <p className="font-serif text-deck text-ink-800 max-w-measure leading-relaxed">
-            We haven&apos;t scored {ticker} yet. A fresh run pulls the last eight quarters of
-            earnings, the price reaction to each, the revenue mix by segment, analyst posture, and
-            where the stock trades against its own history — then reads the gap between price and
-            fundamentals off all of it. Takes about ten seconds.
+            No score on file for {ticker}. A fresh run pulls the last eight quarters of earnings,
+            the price reaction to each, the revenue mix by segment, analyst posture, and where
+            the stock trades against its own history, then reads the gap between price and
+            fundamentals. ~10 seconds.
           </p>
           <RunScoreButton ticker={ticker} />
         </section>
@@ -293,11 +295,7 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
         </div>
 
         <div>
-          <p className="eyebrow mb-2">What&apos;s moving the score</p>
-          <p className="font-sans text-xs text-ink-700 mb-4 leading-snug max-w-measure">
-            Three things go into the score. Here&apos;s what each one measures and where this
-            company stands today.
-          </p>
+          <p className="eyebrow mb-4">Score Drivers</p>
           <table className="editorial-table">
             <thead>
               <tr>
@@ -325,7 +323,7 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
 
         {provenance && (
           <div>
-            <p className="eyebrow mb-2">What this was built from</p>
+            <p className="eyebrow mb-2">Data Sources</p>
             <p className="font-serif text-base text-ink-800 max-w-measure leading-relaxed mb-6">
               {buildProvenance(name, provenance)}
             </p>
@@ -375,8 +373,19 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
         )}
       </section>
 
-      <aside className="col-span-12 lg:col-span-4 lg:border-l lg:border-ink-100 lg:pl-10">
+      <aside className="col-span-12 lg:col-span-4 lg:border-l lg:border-ink-100 lg:pl-10 space-y-8">
         <AuditChain steps={lineage} />
+        <div>
+          <Link
+            href={`/audit/${data.signal.id}` as Route}
+            className="font-display text-base text-editorial border-b-2 border-editorial hover:text-editorial-dark hover:border-editorial-dark"
+          >
+            Audit Chain &rarr;
+          </Link>
+          <p className="font-serif italic text-xs text-ink-500 mt-2">
+            Every input and transform step behind this score.
+          </p>
+        </div>
       </aside>
     </article>
   );

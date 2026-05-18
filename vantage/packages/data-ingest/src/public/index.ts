@@ -183,14 +183,23 @@ export class FmpClient {
     }
   }
 
+  /**
+   * FMP uses dash-separated share classes (`BRK-B`), not the dot-form
+   * (`BRK.B`) that the rest of the app uses. Normalize at the wire boundary
+   * so domain code can keep the canonical ticker.
+   */
+  private wireSymbol(symbol: string): string {
+    return symbol.replace(/\./g, '-');
+  }
+
   async profile(symbol: string): Promise<FmpProfile | null> {
-    const arr = await this.get(`/profile?symbol=${symbol}`, z.array(FmpProfile));
+    const arr = await this.get(`/profile?symbol=${this.wireSymbol(symbol)}`, z.array(FmpProfile));
     return arr[0] ?? null;
   }
 
   async earnings(symbol: string, limit = 8): Promise<FmpEarning[]> {
     const rows = await this.get(
-      `/earnings?symbol=${symbol}&limit=${limit}`,
+      `/earnings?symbol=${this.wireSymbol(symbol)}&limit=${limit}`,
       z.array(FmpEarningRaw),
     );
     return rows.map((r) => ({
@@ -205,7 +214,7 @@ export class FmpClient {
 
   async priceTarget(symbol: string): Promise<FmpPriceTarget | null> {
     const arr = await this.get(
-      `/price-target-consensus?symbol=${symbol}`,
+      `/price-target-consensus?symbol=${this.wireSymbol(symbol)}`,
       z.array(FmpPriceTarget),
     );
     return arr[0] ?? null;
@@ -214,7 +223,7 @@ export class FmpClient {
   /** Price-target averages by recency window — used for the trailing-90d move. */
   async priceTargetSummary(symbol: string): Promise<FmpPriceTargetSummary | null> {
     const arr = await this.get(
-      `/price-target-summary?symbol=${symbol}`,
+      `/price-target-summary?symbol=${this.wireSymbol(symbol)}`,
       z.array(FmpPriceTargetSummary),
     );
     return arr[0] ?? null;
@@ -222,7 +231,7 @@ export class FmpClient {
 
   async revenueSegmentsProduct(symbol: string): Promise<FmpSegment[]> {
     const rows = await this.get(
-      `/revenue-product-segmentation?symbol=${symbol}`,
+      `/revenue-product-segmentation?symbol=${this.wireSymbol(symbol)}`,
       z.array(FmpSegmentRaw),
     );
     return rows.map((r) => ({ date: r.date, segments: r.data }));
@@ -230,7 +239,7 @@ export class FmpClient {
 
   async revenueSegmentsGeo(symbol: string): Promise<FmpSegment[]> {
     const rows = await this.get(
-      `/revenue-geographic-segmentation?symbol=${symbol}`,
+      `/revenue-geographic-segmentation?symbol=${this.wireSymbol(symbol)}`,
       z.array(FmpSegmentRaw),
     );
     return rows.map((r) => ({ date: r.date, segments: r.data }));
@@ -239,7 +248,7 @@ export class FmpClient {
   /** Daily close history, filtered to the trailing `days` window. */
   async historicalPrices(symbol: string, days = 365): Promise<FmpHistoricalPrice[]> {
     const rows = await this.get(
-      `/historical-price-eod/light?symbol=${symbol}`,
+      `/historical-price-eod/light?symbol=${this.wireSymbol(symbol)}`,
       z.array(FmpHistoricalPriceRaw),
     );
     const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
@@ -254,7 +263,7 @@ export class FmpClient {
   /** Monthly analyst upgrade/downgrade posture, normalized to a stable shape. */
   async analystRecommendations(symbol: string): Promise<AnalystRecommendationMonth[]> {
     const rows = await this.get(
-      `/grades-historical?symbol=${symbol}`,
+      `/grades-historical?symbol=${this.wireSymbol(symbol)}`,
       z.array(FmpAnalystRecommendation),
     );
     return rows.map((r) => ({
@@ -277,7 +286,10 @@ export class FmpClient {
 
   /** Trailing-twelve-month ratios — we care about price/sales. */
   async ratiosTtm(symbol: string): Promise<FmpRatiosTtm | null> {
-    const arr = await this.get(`/ratios-ttm?symbol=${symbol}`, z.array(FmpRatiosTtm));
+    const arr = await this.get(
+      `/ratios-ttm?symbol=${this.wireSymbol(symbol)}`,
+      z.array(FmpRatiosTtm),
+    );
     return arr[0] ?? null;
   }
 
@@ -288,7 +300,7 @@ export class FmpClient {
    */
   async keyMetricsHistorical(symbol: string, limit = 20): Promise<FmpKeyMetrics[]> {
     return this.get(
-      `/ratios?symbol=${symbol}&period=annual&limit=${limit}`,
+      `/ratios?symbol=${this.wireSymbol(symbol)}&period=annual&limit=${limit}`,
       z.array(FmpKeyMetrics),
     );
   }

@@ -32,7 +32,7 @@ const mono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: 'Vantage',
   description:
-    'Sector-agnostic financial intelligence. Private and public scoring, classification, portfolio construction, simulation — with full audit lineage.',
+    'Financial intelligence for public and private companies. Scoring, classification, portfolio construction, and simulation with full audit lineage.',
 };
 
 /**

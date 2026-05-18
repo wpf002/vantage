@@ -21,10 +21,7 @@ export function ValuationBand({ bear, base, bull, currency = '$' }: ValuationBan
 
   return (
     <div>
-      <p className="eyebrow mb-2">What it's worth</p>
-      <p className="font-sans text-xs text-ink-700 mb-4 leading-snug max-w-measure">
-        A range, not a single number — the cautious case, the most likely case, and the optimistic case.
-      </p>
+      <p className="eyebrow mb-4">Valuation Range</p>
       <div className="grid grid-cols-3 gap-px bg-ink-100 border border-ink-100">
         <Cell label="Bear" value={fmt(bear, currency)} />
         <Cell label="Base" value={fmt(base, currency)} emphasis />

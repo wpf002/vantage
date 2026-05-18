@@ -16,6 +16,15 @@ import * as authSchema from './auth-schema';
 const connectionString =
   process.env.DATABASE_URL ?? 'postgresql://vantage:vantage@localhost:5432/vantage';
 
-const queryClient = postgres(connectionString, { max: 5 });
+// In Next.js dev, HMR re-evaluates this module on every code change. Without
+// a global cache, each reload leaks a fresh pool and Postgres quickly hits
+// max_connections. Stash the client on globalThis so it survives HMR.
+const globalForDb = globalThis as unknown as {
+  __vantageAuthPg?: ReturnType<typeof postgres>;
+};
+
+const queryClient = globalForDb.__vantageAuthPg ?? postgres(connectionString, { max: 5 });
+if (process.env.NODE_ENV !== 'production') globalForDb.__vantageAuthPg = queryClient;
+
 export const db = drizzle(queryClient, { schema: authSchema });
 export { authSchema };

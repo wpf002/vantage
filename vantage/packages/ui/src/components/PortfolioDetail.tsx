@@ -57,7 +57,7 @@ export function PortfolioDetailView({ portfolio }: { portfolio: PortfolioDetail 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-8">
           <div>
             <p className="eyebrow mb-4">Limits</p>
-            <ul className="font-serif text-sm space-y-3 text-ink-900">
+            <ul className="font-serif text-sm space-y-3 text-ink-900 list-disc list-outside pl-5 marker:text-ink-500">
               <li>
                 No single holding above{' '}
                 <span className="font-mono">{formatPercent(constraints.maxAssetWeight, 0)}</span>{' '}
@@ -79,7 +79,7 @@ export function PortfolioDetailView({ portfolio }: { portfolio: PortfolioDetail 
           {warnings.length > 0 ? (
             <div>
               <p className="eyebrow mb-2">Notes</p>
-              <ul className="font-serif italic text-sm text-ink-900 space-y-2">
+              <ul className="font-serif italic text-sm text-ink-900 space-y-2 list-disc list-outside pl-5 marker:text-ink-500 marker:not-italic">
                 {warnings.map((w) => (
                   <li key={w}>{w}</li>
                 ))}
@@ -90,6 +90,7 @@ export function PortfolioDetailView({ portfolio }: { portfolio: PortfolioDetail 
       </aside>
 
       <section className="col-span-12">
+        <hr className="border-ink-100 mb-8" />
         <p className="eyebrow mb-4">What&apos;s in It</p>
         {allocations.length === 0 ? (
           <p className="font-serif italic text-ink-700">

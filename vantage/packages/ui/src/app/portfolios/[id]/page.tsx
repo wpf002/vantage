@@ -71,18 +71,17 @@ export default async function PortfolioByIdPage({ params, searchParams }: PagePr
         </div>
       ) : null}
 
-      <div className="col-span-12">
+      <div className="col-span-12 -mt-6">
         <PortfolioDetailView portfolio={portfolio} />
       </div>
 
-      <div className="col-span-12 border-t border-ink-100 pt-10">
+      <div className="col-span-12">
         <SimulationsSection portfolioId={portfolio.id} />
       </div>
 
       {isOwner ? (
-        <section className="col-span-12 border-t border-ink-100 pt-10 space-y-10">
+        <section className="col-span-12 space-y-10 -mt-6">
           <div>
-            <p className="eyebrow mb-3">Owner Controls</p>
             <Link
               href={`/portfolios/${id}/rebalance` as Route}
               className="font-display text-base text-editorial border-b-2 border-editorial hover:text-editorial-dark hover:border-editorial-dark"
@@ -91,43 +90,39 @@ export default async function PortfolioByIdPage({ params, searchParams }: PagePr
             </Link>
           </div>
 
+          <hr className="border-ink-100" />
+
           <div className="max-w-measure">
-            <p className="eyebrow mb-2">Rename</p>
-            <p className="font-sans text-xs text-ink-700 mb-4 leading-snug">
-              Change the display name. The portfolio id and history stay the same.
-            </p>
-            <form action={renameAction} className="flex items-end gap-4">
-              <div className="flex-1">
-                <label htmlFor="name" className="eyebrow block mb-2">
-                  Name
-                </label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  maxLength={120}
-                  defaultValue={portfolio.name}
-                  className="block w-full bg-transparent border-0 border-b border-ink-300 focus:border-editorial focus:outline-none font-serif text-lg py-2 px-0"
-                />
-              </div>
+            <form id="rename-form" action={renameAction}>
+              <label htmlFor="name" className="eyebrow block mb-2">
+                Name
+              </label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                required
+                maxLength={120}
+                defaultValue={portfolio.name}
+                className="block w-full bg-transparent border-0 border-b border-ink-300 focus:border-editorial focus:outline-none font-serif text-lg py-2 px-0"
+              />
+            </form>
+            <div className="flex items-center gap-8 mt-4">
               <button
                 type="submit"
-                className="font-display text-base text-editorial border-b-2 border-editorial hover:text-editorial-dark hover:border-editorial-dark whitespace-nowrap"
+                form="rename-form"
+                className="font-display text-base text-editorial border-b-2 border-editorial hover:text-editorial-dark hover:border-editorial-dark"
               >
                 Save &rarr;
               </button>
-            </form>
-          </div>
-
-          <div>
-            <form action={deleteAction}>
-              <ConfirmSubmitButton
-                label="Delete →"
-                confirmLabel="Click again to permanently delete →"
-                className="font-display text-base text-editorial border-b-2 border-editorial hover:text-editorial-dark hover:border-editorial-dark"
-              />
-            </form>
+              <form action={deleteAction}>
+                <ConfirmSubmitButton
+                  label="Delete →"
+                  confirmLabel="Click again to permanently delete →"
+                  className="font-display text-base text-editorial border-b-2 border-editorial hover:text-editorial-dark hover:border-editorial-dark"
+                />
+              </form>
+            </div>
           </div>
         </section>
       ) : null}

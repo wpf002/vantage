@@ -6,14 +6,13 @@ export default function Home() {
   return (
     <div className="grid grid-cols-12 gap-x-10 gap-y-10">
       {/* Editorial lead — broadsheet hero */}
-      <section className="col-span-12 lg:col-span-8 border-b border-ink-100 pb-10">
+      <section className="col-span-12 lg:col-span-8 pb-10">
         <h1 className="font-display text-3xl md:text-4xl xl:text-5xl leading-[1.05] tracking-editorial mb-6 text-balance">
           Know what any company is worth — and why.
         </h1>
         <p className="font-serif text-deck text-ink-800 max-w-measure mb-8">
-          Search any public or private company. Vantage returns a valuation range,
-          a clear verdict, and the reasoning behind both — with every number traced
-          back to where it came from.
+          Search any public or private company for a valuation range, a verdict,
+          and the reasoning behind both. Every number traced to source.
         </p>
         <SearchBar />
       </section>
@@ -52,29 +51,28 @@ export default function Home() {
           <ExplainerColumn
             eyebrow="Public Companies"
             headline="Is the price ahead of the business?"
-            body="For listed companies, we measure how far the stock has run versus what the fundamentals support, whether the growth story still holds, and how much hype is in the price. That rolls up into one score and a plain verdict."
+            body="Measures how far the stock has run versus what the fundamentals support, whether the growth story still holds, and how much hype is in the price. One score, one verdict."
           />
           <ExplainerColumn
             eyebrow="Private Companies"
             headline="Three ways to value it, blended."
-            body="With no stock price to lean on, we run a cash-flow model, compare against similar companies, and check the buyout math — then weight whichever methods actually fit. An early, fast-growing company leans on comparables; a steady earner leans on cash flow."
+            body="With no stock price to lean on, a cash-flow model, comparable peers, and buyout math each produce a value. The methods are weighted by what fits: fast-growing companies lean on comparables, steady earners on cash flow."
           />
           <ExplainerColumn
             eyebrow="Beyond a Single Company"
             headline="From one company to a whole portfolio."
-            body="Any verdict can roll up into a portfolio — sorted into buckets, held to position limits, and stress-tested against thousands of scenarios before you act on it."
+            body="Any verdict rolls up into a portfolio: sorted into buckets, held to position limits, and stress-tested across thousands of scenarios before acting on it."
           />
         </div>
         <p className="font-serif text-base text-ink-700 mt-8 max-w-measure leading-relaxed">
-          Every score rolls up into an asset class — Core, High Asymmetry, Tactical, or Avoid —
-          listed on the{' '}
+          Every score rolls up into one of four asset classes — Core, High Asymmetry,
+          Tactical, or Avoid — listed under{' '}
           <Link
             href={'/classifications' as Route}
             className="text-editorial underline-offset-4 hover:underline"
           >
             Classifications
-          </Link>{' '}
-          page.
+          </Link>.
         </p>
       </section>
     </div>

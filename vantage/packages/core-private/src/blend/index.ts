@@ -8,6 +8,12 @@ import {
 } from '@vantage/shared';
 import type { ValuationMethodResult, BlendedValuation } from '../types.js';
 
+function fmtUsd(n: number): string {
+  if (Math.abs(n) >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
+  if (Math.abs(n) >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
+  return `$${Math.round(n).toLocaleString()}`;
+}
+
 /**
  * Weighted blend.
  *
@@ -139,7 +145,7 @@ export function blendedValuationToSignal(b: BlendedValuation): Signal {
       weight: b.weights[r.method],
       ts: b.asOf,
     })),
-    rationale: `Blended valuation: $${b.finalValuation.base.toFixed(0)} (bear $${b.finalValuation.bear.toFixed(0)} / bull $${b.finalValuation.bull.toFixed(0)}).`,
+    rationale: `Blended valuation ${fmtUsd(b.finalValuation.base)} — bear ${fmtUsd(b.finalValuation.bear)}, bull ${fmtUsd(b.finalValuation.bull)}.`,
     metadata: { weights: b.weights, mlAdjustment: b.mlAdjustment },
   };
 }

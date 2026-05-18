@@ -68,7 +68,8 @@ export default async function SignInPage({ searchParams }: PageProps) {
     `/signin?mode=${otherMode}${callbackUrl ? `&callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}` as Route;
 
   return (
-    <div className="grid grid-cols-12 gap-x-10 gap-y-10">
+    <div className="min-h-full flex flex-col justify-center -my-10 lg:-my-12">
+      <div className="grid grid-cols-12 gap-x-10 gap-y-10 py-10 lg:py-12">
       <header className="col-span-12 lg:col-span-8 border-b border-ink-100 pb-10">
         <p className="eyebrow mb-3">{isCreate ? 'Create Account' : 'Sign In'}</p>
         <h1 className="font-display text-5xl tracking-editorial">
@@ -134,6 +135,7 @@ export default async function SignInPage({ searchParams }: PageProps) {
         </p>
       </section>
 
+      </div>
     </div>
   );
 }

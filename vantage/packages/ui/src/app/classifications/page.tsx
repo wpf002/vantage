@@ -128,12 +128,6 @@ export default async function ClassificationsPage({
 
   return (
     <article className="grid grid-cols-12 gap-x-10 gap-y-10">
-      <header className="col-span-12 border-b border-ink-100 pb-10">
-        <p className="font-serif text-deck text-ink-800 max-w-measure leading-relaxed">
-          Every company we&apos;ve scored, sorted into one of four buckets based on its signals.
-        </p>
-      </header>
-
       <nav className="col-span-12 flex flex-wrap gap-6 border-b border-ink-100 pb-4">
         {FILTERS.map((f) => {
           const isActive = active === f.key;
@@ -158,11 +152,11 @@ export default async function ClassificationsPage({
       </nav>
 
       <section className="col-span-12 space-y-16">
-        {groupsToRender.map((cls) => {
+        {groupsToRender.map((cls, idx) => {
           const meta = CLASS_META[cls];
           const items = grouped[cls];
           return (
-            <div key={cls}>
+            <div key={cls} className={idx > 0 ? 'border-t border-ink-100 pt-16' : ''}>
               <div className="border-b border-ink-100 pb-4 mb-6">
                 <p className="eyebrow mb-2">{meta.label}</p>
                 <p className="font-serif text-base text-ink-700 max-w-measure leading-relaxed">

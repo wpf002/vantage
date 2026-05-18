@@ -1,3 +1,5 @@
+import Link from 'next/link';
+import type { Route } from 'next';
 import { notFound } from 'next/navigation';
 import { SignalLabel } from '@/components/SignalLabel';
 import { ValuationBand } from '@/components/ValuationBand';
@@ -83,28 +85,34 @@ async function fetchLatest(id: string): Promise<LatestValuationResponse | null> 
 export default async function PrivateCompany({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const fallback = getPrivateCompany(id);
-  if (!fallback) notFound();
-
   const data = await fetchLatest(id);
+
+  // Reachable two ways: a static demo slug (e.g. /private/anthropic) or a
+  // platform_companies UUID (e.g. from an audit linkback). With no static
+  // fallback AND no API data, there's nothing to render — 404.
+  if (!fallback && !data) notFound();
 
   // ── Empty state — no valuation persisted yet ──────────────────────────
   if (!data) {
+    // `data` is null here; the !fallback case above already returned, so
+    // fallback is guaranteed non-null at this point.
+    const f = fallback!;
     return (
       <article className="grid grid-cols-12 gap-x-10 gap-y-10">
         <header className="col-span-12 border-b border-ink-100 pb-10">
           <p className="eyebrow mb-3">
-            {fallback.lifeStage} · {fallback.sector} · Private company
+            {f.lifeStage} · {f.sector} · Private company
           </p>
           <h1 className="font-display text-6xl tracking-editorial leading-tight mb-6">
-            {fallback.name}
+            {f.name}
           </h1>
         </header>
         <section className="col-span-12 lg:col-span-8 space-y-6">
           <p className="eyebrow">No valuation yet</p>
           <p className="font-serif text-deck text-ink-800 max-w-measure leading-relaxed">
-            We haven&apos;t valued {fallback.name} yet. A fresh run pulls every input live —
-            peer financials, macro rates, engineering velocity, patent and funding activity, and
-            an LLM-extracted revenue base — then values the company three ways and blends them.
+            No valuation on file for {f.name}. A fresh run pulls current peer financials, macro
+            rates, engineering velocity, patent and funding activity, and a revenue base from
+            company research, then values the company three ways and blends them.
           </p>
           <RunValuationButton companyId={id} />
         </section>
@@ -114,8 +122,9 @@ export default async function PrivateCompany({ params }: { params: Promise<{ id:
 
   // ── Success state — render the persisted live valuation ───────────────
   const meta = data.metadata ?? data.signal.metadata ?? {};
-  const name = meta.companyName ?? fallback.name;
-  const lifeStage = meta.lifeStage ?? fallback.lifeStage;
+  const name = meta.companyName ?? fallback?.name ?? 'Private Company';
+  const lifeStage = meta.lifeStage ?? fallback?.lifeStage ?? 'Private Company';
+  const sector = fallback?.sector ?? 'Private';
   const confidence = meta.confidence ?? data.signal.confidence;
   const valuation = meta.finalValuation ?? { bear: 0, base: 0, bull: 0 };
   const weights = meta.weights ?? { dcf: 0, comps: 0, lbo: 0 };
@@ -146,11 +155,11 @@ export default async function PrivateCompany({ params }: { params: Promise<{ id:
   const read = spread > 3 ? 'Wide Range' : spread > 1.8 ? 'Moderate Range' : 'Tight Range';
 
   const readPlain =
-    `A blended valuation of ${fmtUsd(valuation.base)} — ranging from ${fmtUsd(valuation.bear)} ` +
-    `on the cautious case to ${fmtUsd(valuation.bull)} on the optimistic one.`;
+    `Blended valuation ${fmtUsd(valuation.base)}. Bear ${fmtUsd(valuation.bear)}, ` +
+    `bull ${fmtUsd(valuation.bull)}.`;
 
   const rationale =
-    'Valuation blends three methods — discounted cash flow, public comparables, and a leveraged-buyout case — weighted by life stage. ' +
+    'Blends discounted cash flow, public comparables, and a leveraged-buyout case, weighted by life stage. ' +
     (revenueIntel?.revenueSource
       ? `Revenue base sourced from ${revenueIntel.revenueSource} (${revenueIntel.revenueConfidence} confidence).`
       : 'Revenue base drawn from live company research.');
@@ -159,7 +168,7 @@ export default async function PrivateCompany({ params }: { params: Promise<{ id:
     <article className="grid grid-cols-12 gap-x-10 gap-y-10">
       <header className="col-span-12 border-b border-ink-100 pb-10">
         <p className="eyebrow mb-3">
-          {lifeStage} · {fallback.sector} · Private company
+          {lifeStage} · {sector} · Private company
         </p>
         <h1 className="font-display text-6xl tracking-editorial leading-tight mb-6">{name}</h1>
         <p className="font-mono text-sm text-ink-500">As of {formatDate(data.signal.timestamp)}</p>
@@ -182,25 +191,21 @@ export default async function PrivateCompany({ params }: { params: Promise<{ id:
               Private companies don&apos;t report publicly — this is the revenue figure the
               valuation is anchored to, pulled from live company research.
             </p>
-            <div className="font-mono text-sm text-ink-900 space-y-1">
+            <div className="font-mono text-sm text-ink-900">
               <p>
                 {revenueIntel.revenueLtmUsd === null
                   ? 'n/a'
                   : `${fmtUsd(revenueIntel.revenueLtmUsd)} LTM`}
               </p>
-              <p className="text-ink-500">
-                confidence: {revenueIntel.revenueConfidence} · as of{' '}
-                {revenueIntel.revenueAsOfMonth ?? 'unknown'}
-              </p>
             </div>
+            <hr className="mt-8 border-ink-100" />
           </div>
         )}
 
         <div>
-          <p className="eyebrow mb-2">How we valued it</p>
+          <p className="eyebrow mb-2">Valuation Methodology</p>
           <p className="font-sans text-xs text-ink-700 mb-4 leading-snug max-w-measure">
-            Private companies have no stock price, so we value them three ways and weight whichever
-            methods actually fit this business.
+            Three methods, weighted by life stage and per-method confidence.
           </p>
           <table className="editorial-table">
             <thead>
@@ -238,8 +243,19 @@ export default async function PrivateCompany({ params }: { params: Promise<{ id:
         </div>
       </section>
 
-      <aside className="col-span-12 lg:col-span-4 lg:border-l lg:border-ink-100 lg:pl-10">
+      <aside className="col-span-12 lg:col-span-4 lg:border-l lg:border-ink-100 lg:pl-10 space-y-8">
         <AuditChain steps={lineage} />
+        <div>
+          <Link
+            href={`/audit/${data.signal.id}` as Route}
+            className="font-display text-base text-editorial border-b-2 border-editorial hover:text-editorial-dark hover:border-editorial-dark"
+          >
+            Audit Chain &rarr;
+          </Link>
+          <p className="font-serif italic text-xs text-ink-500 mt-2">
+            Every input and transform step behind this valuation.
+          </p>
+        </div>
       </aside>
     </article>
   );

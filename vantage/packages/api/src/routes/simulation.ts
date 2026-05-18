@@ -1,5 +1,6 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import {
   runMonteCarlo,
   MonteCarloInputs,
@@ -21,7 +22,7 @@ import {
   NotFoundError,
   AuthorizationError,
 } from '@vantage/shared';
-import { db } from '../db/client.js';
+import { db, schema } from '../db/client.js';
 import { getPortfolioById } from '../db/portfolioStore.js';
 import {
   persistSimulation,
@@ -29,6 +30,21 @@ import {
   listPortfolioSimulations,
   type SimulationKind,
 } from '../db/simulationStore.js';
+
+async function findSignalIdForSimulation(simulationId: string): Promise<string | null> {
+  const rows = await db
+    .select({ id: schema.platformSignals.id })
+    .from(schema.platformSignals)
+    .where(
+      and(
+        eq(schema.platformSignals.signalType, 'platform.simulation_outcome'),
+        sql`${schema.platformSignals.metadata}->>'simulationId' = ${simulationId}`,
+      ),
+    )
+    .orderBy(desc(schema.platformSignals.timestamp))
+    .limit(1);
+  return rows[0]?.id ?? null;
+}
 
 /**
  * Simulation routes.
@@ -260,6 +276,8 @@ export const simulationRoutes: FastifyPluginAsyncZod = async (app) => {
     const sim = await getSimulationById(db, req.params.id);
     if (!sim) return reply.status(404).send({ error: 'NOT_FOUND', message: 'not found' });
 
+    const signalId = await findSignalIdForSimulation(sim.id);
+
     if (sim.portfolioId) {
       const portfolio = await getPortfolioById(db, sim.portfolioId);
       if (!portfolio) return reply.status(404).send({ error: 'NOT_FOUND', message: 'not found' });
@@ -270,6 +288,7 @@ export const simulationRoutes: FastifyPluginAsyncZod = async (app) => {
       }
       return {
         ...sim,
+        signalId,
         portfolio: {
           id: portfolio.id,
           name: portfolio.name,
@@ -279,7 +298,7 @@ export const simulationRoutes: FastifyPluginAsyncZod = async (app) => {
         },
       };
     }
-    return sim;
+    return { ...sim, signalId };
   });
 
   // ── List by portfolio ──────────────────────────────────────────────────
