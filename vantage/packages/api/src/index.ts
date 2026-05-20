@@ -14,6 +14,7 @@ import { simulationRoutes } from './routes/simulation.js';
 import { auditRoutes } from './routes/audit.js';
 import { classificationsRoutes } from './routes/classifications.js';
 import { portfoliosRoutes } from './routes/portfolios.js';
+import { metaRoutes } from './routes/meta.js';
 import { registerSessionMiddleware } from './middleware/session.js';
 import { startWorkers, stopWorkers } from './queues/workers.js';
 import { closeQueues } from './queues/index.js';
@@ -66,6 +67,7 @@ async function buildServer() {
   await app.register(simulationRoutes, { prefix: '/v1/simulation' });
   await app.register(auditRoutes, { prefix: '/v1/audit' });
   await app.register(classificationsRoutes, { prefix: '/v1/classifications' });
+  await app.register(metaRoutes, { prefix: '/v1/meta' });
 
   return app;
 }

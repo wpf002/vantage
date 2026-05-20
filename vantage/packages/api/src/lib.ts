@@ -26,6 +26,7 @@ export {
   type PortfolioListItem,
 } from './db/portfolioStore.js';
 export { rebuildSystemPortfolio } from './jobs/systemPortfolio.js';
+export { runOutcomeBackfill, type BackfillSummary } from './workers/outcomes.js';
 export {
   persistSimulation,
   getSimulationById,

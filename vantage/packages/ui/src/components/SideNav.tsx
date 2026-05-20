@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth';
+import { isAdminEmail } from '@/lib/admin';
 import { SideNavLink } from './SideNavLink';
 
 /**
@@ -21,6 +22,7 @@ const NAV = [
 export async function SideNav() {
   const session = await auth();
   const signedIn = !!session?.user?.id;
+  const admin = isAdminEmail(session?.user?.email);
 
   return (
     <aside
@@ -35,6 +37,7 @@ export async function SideNav() {
       {NAV.map((item) => (
         <SideNavLink key={item.href} href={item.href} label={item.label} />
       ))}
+      {admin ? <SideNavLink href="/meta" label="Meta" /> : null}
       {signedIn ? <SideNavLink href="/settings" label="Settings" /> : null}
     </aside>
   );

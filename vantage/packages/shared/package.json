@@ -1,6 +1,6 @@
 {
   "name": "@vantage/shared",
-  "version": "0.1.0",
+  "version": "0.8.0",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
@@ -10,7 +10,9 @@
     "./signals": "./dist/signals.js",
     "./classes": "./dist/classes.js",
     "./companies": "./dist/companies.js",
-    "./errors": "./dist/errors.js"
+    "./errors": "./dist/errors.js",
+    "./calibration": "./dist/calibration.js",
+    "./tuning": "./dist/tuning.js"
   },
   "scripts": {
     "build": "tsc -b",

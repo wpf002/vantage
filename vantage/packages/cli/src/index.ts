@@ -11,6 +11,7 @@ import { scorePublicLive } from './commands/score-public-live.js';
 import { classifyStatus } from './commands/classify-status.js';
 import { portfolioBuild } from './commands/portfolio-build.js';
 import { simulate } from './commands/simulate.js';
+import { metaBackfill } from './commands/meta-backfill.js';
 
 const program = new Command();
 program.name('vantage').description('Vantage admin & batch CLI').version('0.6.0');
@@ -129,6 +130,14 @@ program
       paths: Number(opts.paths ?? 10000),
       seed: opts.seed === undefined ? undefined : Number(opts.seed),
     });
+  });
+
+// ── meta-backfill -------------------------------------------------------
+program
+  .command('meta-backfill')
+  .description('Run the Phase 8 outcome backfill now (enqueues + waits for the API worker)')
+  .action(async () => {
+    await metaBackfill();
   });
 
 // ── health --------------------------------------------------------------

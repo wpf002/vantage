@@ -139,6 +139,9 @@ importers:
       '@vantage/simulation':
         specifier: workspace:*
         version: link:../simulation
+      bullmq:
+        specifier: ^5.34.0
+        version: 5.76.8
       commander:
         specifier: ^12.1.0
         version: 12.1.0
@@ -148,6 +151,9 @@ importers:
       drizzle-orm:
         specifier: ^0.36.0
         version: 0.36.4(@types/react@19.2.14)(postgres@3.4.9)(react@19.2.6)
+      ioredis:
+        specifier: ^5.4.0
+        version: 5.10.1
       postgres:
         specifier: ^3.4.5
         version: 3.4.9

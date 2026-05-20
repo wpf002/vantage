@@ -9,15 +9,19 @@ import { persistClassification, persistSignal } from '../db/signalStore.js';
 import {
   CLASSIFICATION_QUEUE_NAME,
   HARMONIZE_QUEUE_NAME,
+  OUTCOMES_QUEUE_NAME,
   SYSTEM_PORTFOLIO_QUEUE_NAME,
   classificationQueue,
   connection,
+  ensureOutcomesSchedule,
   ensureSystemPortfolioSchedule,
   type ClassificationJob,
   type HarmonizeJob,
+  type OutcomesJob,
   type SystemPortfolioJob,
 } from './index.js';
 import { rebuildSystemPortfolio } from '../jobs/systemPortfolio.js';
+import { runOutcomeBackfill } from '../workers/outcomes.js';
 
 /**
  * Phase 4 workers. They run in the same Node process as the Fastify API for
@@ -203,6 +207,13 @@ async function handleSystemPortfolio(job: Job<SystemPortfolioJob>): Promise<void
   await rebuildSystemPortfolio(db);
 }
 
+async function handleOutcomes(job: Job<OutcomesJob>) {
+  log.info({ jobId: job.id, reason: job.data.reason }, 'outcomes: start');
+  const summary = await runOutcomeBackfill(db);
+  log.info({ jobId: job.id, ...summary }, 'outcomes: complete');
+  return summary; // surfaced as job.returnvalue for the CLI / POST trigger
+}
+
 export function startWorkers(): void {
   if (workers.length > 0) return; // idempotent — guard against double-start
 
@@ -238,11 +249,21 @@ export function startWorkers(): void {
   });
   systemPortfolioWorker.on('ready', () => log.info('system portfolio worker ready'));
 
-  workers = [harmonizeWorker, classificationWorker, systemPortfolioWorker];
+  const outcomesWorker = new Worker<OutcomesJob>(OUTCOMES_QUEUE_NAME, handleOutcomes, {
+    connection,
+    concurrency: 1,
+  });
+  outcomesWorker.on('failed', (job, err) => {
+    log.error({ jobId: job?.id, err: err.message }, 'outcomes: failed');
+  });
+  outcomesWorker.on('ready', () => log.info('outcomes worker ready'));
 
-  // Register the repeatable schedule — fire-and-forget; failures are logged
-  // inside ensureSystemPortfolioSchedule.
+  workers = [harmonizeWorker, classificationWorker, systemPortfolioWorker, outcomesWorker];
+
+  // Register the repeatable schedules — fire-and-forget; failures are logged
+  // inside the ensure* helpers.
   void ensureSystemPortfolioSchedule();
+  void ensureOutcomesSchedule();
 
   log.info('workers started');
 }
