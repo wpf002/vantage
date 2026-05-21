@@ -22,6 +22,11 @@ const ListQuery = z.object({
 
 const EntityParams = z.object({ entity: z.string() });
 
+/** Last-resort display name when an entity can't be resolved to a company. */
+function titleCase(s: string): string {
+  return s.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 /**
  * DISTINCT ON (entity) — one row per entity, the most recent. Postgres-only
  * but we're Postgres-only by design.
@@ -69,6 +74,10 @@ export const classificationsRoutes: FastifyPluginAsyncZod = async (app) => {
       const entities = filtered.map((r) => r.entity);
       const companyById = new Map<string, typeof schema.platformCompanies.$inferSelect>();
       const companyByTicker = new Map<string, typeof schema.platformCompanies.$inferSelect>();
+      // Some decisions (notably private valuations) log the entity as a
+      // lowercase name slug rather than a UUID/ticker — resolve those by
+      // normalized company name so the display name stays properly cased.
+      const companyByEntity = new Map<string, typeof schema.platformCompanies.$inferSelect>();
       if (entities.length > 0) {
         const idGuess = entities.filter((e) => /^[0-9a-f-]{36}$/i.test(e));
         const tickerGuess = entities.filter((e) => !/^[0-9a-f-]{36}$/i.test(e));
@@ -88,14 +97,27 @@ export const classificationsRoutes: FastifyPluginAsyncZod = async (app) => {
           for (const c of byTicker) {
             if (c.ticker) companyByTicker.set(c.ticker, c);
           }
+          // Name-slug fallback for whatever the ticker match missed.
+          const unresolved = tickerGuess.filter((e) => !companyByTicker.has(e));
+          for (const e of unresolved) {
+            const slug = e.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (!slug) continue;
+            const match = await db
+              .select()
+              .from(schema.platformCompanies)
+              .where(sql`regexp_replace(lower(${schema.platformCompanies.name}), '[^a-z0-9]', '', 'g') LIKE ${slug + '%'}`)
+              .limit(1);
+            if (match[0]) companyByEntity.set(e, match[0]);
+          }
         }
       }
 
       return filtered.map((r) => {
-        const company = companyById.get(r.entity) ?? companyByTicker.get(r.entity);
+        const company =
+          companyById.get(r.entity) ?? companyByTicker.get(r.entity) ?? companyByEntity.get(r.entity);
         return {
           entity: r.entity,
-          name: company?.name ?? r.entity,
+          name: company?.name ?? titleCase(r.entity),
           ticker: company?.ticker ?? null,
           marketType: company?.marketType ?? null,
           sector: company?.sector ?? null,

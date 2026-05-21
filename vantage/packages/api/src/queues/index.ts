@@ -17,6 +17,12 @@ import { Queue, type JobsOptions } from 'bullmq';
 export const HARMONIZE_QUEUE_NAME = 'vantage.signals.harmonize';
 export const CLASSIFICATION_QUEUE_NAME = 'vantage.classification.run';
 export const SYSTEM_PORTFOLIO_QUEUE_NAME = 'vantage.system.portfolio';
+// Phase 8 — meta-learning outcome capture: grades matured decisions against
+// realized forward price moves.
+export const META_OUTCOME_QUEUE_NAME = 'vantage.meta.outcome';
+// Phase 8 — daily universe re-scoring: keeps fresh decisions landing so the
+// decision log (and therefore meta-learning) grows without manual input.
+export const UNIVERSE_SCORE_QUEUE_NAME = 'vantage.universe.score';
 
 export interface HarmonizeJob {
   signalId: string;
@@ -31,6 +37,17 @@ export interface ClassificationJob {
 
 export interface SystemPortfolioJob {
   reason: 'cron' | 'manual';
+}
+
+export interface MetaOutcomeJob {
+  reason: 'cron' | 'manual';
+  horizonDays?: number;
+}
+
+export interface UniverseScoreJob {
+  reason: 'cron' | 'manual';
+  /** Optional cap on how many tickers to score this run. */
+  limit?: number;
 }
 
 const REDIS_URL = process.env.REDIS_URL ?? 'redis://localhost:6379';
@@ -68,6 +85,16 @@ export const systemPortfolioQueue = new Queue<SystemPortfolioJob>(SYSTEM_PORTFOL
   defaultJobOptions,
 });
 
+export const metaOutcomeQueue = new Queue<MetaOutcomeJob>(META_OUTCOME_QUEUE_NAME, {
+  connection,
+  defaultJobOptions,
+});
+
+export const universeScoreQueue = new Queue<UniverseScoreJob>(UNIVERSE_SCORE_QUEUE_NAME, {
+  connection,
+  defaultJobOptions,
+});
+
 /**
  * Schedule the nightly system-portfolio rebuild as a BullMQ job scheduler.
  *
@@ -80,7 +107,9 @@ export const systemPortfolioQueue = new Queue<SystemPortfolioJob>(SYSTEM_PORTFOL
  * Default cadence: 02:00 UTC every night.
  */
 export async function ensureSystemPortfolioSchedule(): Promise<void> {
-  const pattern = process.env.SYSTEM_PORTFOLIO_CRON ?? '0 2 * * *';
+  // `||` (not `??`) so a blank env var falls back too — an empty pattern
+  // makes BullMQ throw "Either .pattern or .every must be defined".
+  const pattern = process.env.SYSTEM_PORTFOLIO_CRON || '0 2 * * *';
   try {
     await systemPortfolioQueue.upsertJobScheduler(
       'system-portfolio-nightly',
@@ -95,11 +124,50 @@ export async function ensureSystemPortfolioSchedule(): Promise<void> {
   }
 }
 
+/**
+ * Schedule the daily outcome-capture sweep. Mirrors the system-portfolio
+ * scheduler. Default cadence: 03:00 UTC (after the 02:00 portfolio rebuild).
+ */
+export async function ensureMetaOutcomeSchedule(): Promise<void> {
+  const pattern = process.env.META_OUTCOME_CRON || '0 3 * * *';
+  try {
+    await metaOutcomeQueue.upsertJobScheduler(
+      'meta-outcome-daily',
+      { pattern, tz: 'UTC' },
+      { name: 'capture', data: { reason: 'cron' } },
+    );
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[queues] failed to register meta outcome cron', err);
+  }
+}
+
+/**
+ * Schedule the daily universe re-scoring sweep. Default 01:00 UTC — runs
+ * before the portfolio rebuild (02:00) and outcome capture (03:00) so each
+ * day's fresh scores feed the downstream jobs.
+ */
+export async function ensureUniverseScoreSchedule(): Promise<void> {
+  const pattern = process.env.UNIVERSE_SCORE_CRON || '0 1 * * *';
+  try {
+    await universeScoreQueue.upsertJobScheduler(
+      'universe-score-daily',
+      { pattern, tz: 'UTC' },
+      { name: 'score', data: { reason: 'cron' } },
+    );
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[queues] failed to register universe score cron', err);
+  }
+}
+
 export async function closeQueues(): Promise<void> {
   await Promise.allSettled([
     harmonizeQueue.close(),
     classificationQueue.close(),
     systemPortfolioQueue.close(),
+    metaOutcomeQueue.close(),
+    universeScoreQueue.close(),
   ]);
   await connection.quit().catch(() => undefined);
 }

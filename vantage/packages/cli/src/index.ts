@@ -11,9 +11,15 @@ import { scorePublicLive } from './commands/score-public-live.js';
 import { classifyStatus } from './commands/classify-status.js';
 import { portfolioBuild } from './commands/portfolio-build.js';
 import { simulate } from './commands/simulate.js';
+import { screener } from './commands/screener.js';
+import { board } from './commands/board.js';
+import { metaCapture, metaStatus } from './commands/meta.js';
 
 const program = new Command();
-program.name('vantage').description('Vantage admin & batch CLI').version('0.6.0');
+program.name('vantage').description('Vantage admin & batch CLI').version('0.9.0');
+
+/** Collector for repeatable options (e.g. --label aligned_strength --label ...). */
+const collect = (val: string, prev: string[]) => [...prev, val];
 
 // ── score-public --------------------------------------------------------
 program
@@ -129,6 +135,55 @@ program
       paths: Number(opts.paths ?? 10000),
       seed: opts.seed === undefined ? undefined : Number(opts.seed),
     });
+  });
+
+// ── screener ------------------------------------------------------------
+program
+  .command('screener')
+  .description('Query the public screener and print a text table')
+  .option('--label <label>', 'public label (repeatable)', collect, [])
+  .option('--sector <sector>', 'sector (repeatable)', collect, [])
+  .option('--class <class>', 'asset class (repeatable)', collect, [])
+  .option('--score-min <n>', 'minimum score (0-100)')
+  .option('--score-max <n>', 'maximum score (0-100)')
+  .option('--confidence-min <n>', 'minimum confidence (0-1)')
+  .option('--market-cap-min <n>', 'minimum market cap (millions USD)')
+  .option('--market-cap-max <n>', 'maximum market cap (millions USD)')
+  .option('--sort-by <field>', 'score | recency | name | sector | confidence')
+  .option('--sort-dir <dir>', 'asc | desc')
+  .option('--limit <n>', 'rows per page (max 200)', '50')
+  .option('-u, --url <url>', 'API base URL', process.env.API_URL ?? 'http://localhost:4000')
+  .action(async (opts) => {
+    await screener(opts);
+  });
+
+// ── board ---------------------------------------------------------------
+program
+  .command('board')
+  .description("Print the Daily Board's five sections")
+  .option('--date <YYYY-MM-DD>', 'board date (default: today)')
+  .option('-u, --url <url>', 'API base URL', process.env.API_URL ?? 'http://localhost:4000')
+  .action(async (opts) => {
+    await board(opts);
+  });
+
+// ── meta-capture --------------------------------------------------------
+program
+  .command('meta-capture')
+  .description('Grade matured decisions against realized prices (Phase 8 outcome capture)')
+  .option('--horizon <days>', 'measurement horizon in days (default 30)')
+  .option('-u, --url <url>', 'API base URL', process.env.API_URL ?? 'http://localhost:4000')
+  .action(async (opts) => {
+    await metaCapture(opts);
+  });
+
+// ── meta-status ---------------------------------------------------------
+program
+  .command('meta-status')
+  .description('Print the meta-learning calibration report')
+  .option('-u, --url <url>', 'API base URL', process.env.API_URL ?? 'http://localhost:4000')
+  .action(async (opts) => {
+    await metaStatus(opts);
   });
 
 // ── health --------------------------------------------------------------

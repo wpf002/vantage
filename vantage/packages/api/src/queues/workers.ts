@@ -9,15 +9,23 @@ import { persistClassification, persistSignal } from '../db/signalStore.js';
 import {
   CLASSIFICATION_QUEUE_NAME,
   HARMONIZE_QUEUE_NAME,
+  META_OUTCOME_QUEUE_NAME,
   SYSTEM_PORTFOLIO_QUEUE_NAME,
+  UNIVERSE_SCORE_QUEUE_NAME,
   classificationQueue,
   connection,
+  ensureMetaOutcomeSchedule,
   ensureSystemPortfolioSchedule,
+  ensureUniverseScoreSchedule,
   type ClassificationJob,
   type HarmonizeJob,
+  type MetaOutcomeJob,
   type SystemPortfolioJob,
+  type UniverseScoreJob,
 } from './index.js';
 import { rebuildSystemPortfolio } from '../jobs/systemPortfolio.js';
+import { captureOutcomes } from '../jobs/outcomeCapture.js';
+import { scoreUniverse } from '../jobs/universeScore.js';
 
 /**
  * Phase 4 workers. They run in the same Node process as the Fastify API for
@@ -203,6 +211,18 @@ async function handleSystemPortfolio(job: Job<SystemPortfolioJob>): Promise<void
   await rebuildSystemPortfolio(db);
 }
 
+async function handleMetaOutcome(job: Job<MetaOutcomeJob>): Promise<void> {
+  log.info({ jobId: job.id, reason: job.data.reason }, 'meta outcome: start');
+  const res = await captureOutcomes({ horizonDays: job.data.horizonDays });
+  log.info(res, 'meta outcome: done');
+}
+
+async function handleUniverseScore(job: Job<UniverseScoreJob>): Promise<void> {
+  log.info({ jobId: job.id, reason: job.data.reason }, 'universe score: start');
+  const res = await scoreUniverse({ limit: job.data.limit });
+  log.info(res, 'universe score: done');
+}
+
 export function startWorkers(): void {
   if (workers.length > 0) return; // idempotent — guard against double-start
 
@@ -238,11 +258,38 @@ export function startWorkers(): void {
   });
   systemPortfolioWorker.on('ready', () => log.info('system portfolio worker ready'));
 
-  workers = [harmonizeWorker, classificationWorker, systemPortfolioWorker];
+  const metaOutcomeWorker = new Worker<MetaOutcomeJob>(META_OUTCOME_QUEUE_NAME, handleMetaOutcome, {
+    connection,
+    concurrency: 1,
+  });
+  metaOutcomeWorker.on('failed', (job, err) => {
+    log.error({ jobId: job?.id, err: err.message }, 'meta outcome: failed');
+  });
+  metaOutcomeWorker.on('ready', () => log.info('meta outcome worker ready'));
 
-  // Register the repeatable schedule — fire-and-forget; failures are logged
-  // inside ensureSystemPortfolioSchedule.
+  const universeScoreWorker = new Worker<UniverseScoreJob>(
+    UNIVERSE_SCORE_QUEUE_NAME,
+    handleUniverseScore,
+    { connection, concurrency: 1 },
+  );
+  universeScoreWorker.on('failed', (job, err) => {
+    log.error({ jobId: job?.id, err: err.message }, 'universe score: failed');
+  });
+  universeScoreWorker.on('ready', () => log.info('universe score worker ready'));
+
+  workers = [
+    harmonizeWorker,
+    classificationWorker,
+    systemPortfolioWorker,
+    metaOutcomeWorker,
+    universeScoreWorker,
+  ];
+
+  // Register the repeatable schedules — fire-and-forget; failures are logged
+  // inside the ensure* helpers.
   void ensureSystemPortfolioSchedule();
+  void ensureMetaOutcomeSchedule();
+  void ensureUniverseScoreSchedule();
 
   log.info('workers started');
 }

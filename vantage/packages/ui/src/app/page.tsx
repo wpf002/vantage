@@ -4,9 +4,9 @@ import { QUICK_PICKS } from '@/lib/companies';
 
 export default function Home() {
   return (
-    <div className="grid grid-cols-12 gap-x-10 gap-y-10">
+    <div className="grid grid-cols-12 gap-x-10 gap-y-6 -mt-2 lg:-mt-4">
       {/* Editorial lead — broadsheet hero */}
-      <section className="col-span-12 lg:col-span-8 pb-10">
+      <section className="col-span-12 lg:col-span-8 pb-6">
         <h1 className="font-display text-3xl md:text-4xl xl:text-5xl leading-[1.05] tracking-editorial mb-6 text-balance">
           Know what any company is worth — and why.
         </h1>
@@ -73,6 +73,17 @@ export default function Home() {
           >
             Classifications
           </Link>.
+        </p>
+        <p className="font-serif text-base text-ink-700 mt-4 max-w-measure leading-relaxed">
+          Browse every scored ticker in the{' '}
+          <Link href={'/screener' as Route} className="text-editorial underline-offset-4 hover:underline">
+            Stock Screener
+          </Link>
+          , or scan yesterday&apos;s biggest moves in the{' '}
+          <Link href={'/board' as Route} className="text-editorial underline-offset-4 hover:underline">
+            Daily Updates
+          </Link>
+          .
         </p>
       </section>
     </div>

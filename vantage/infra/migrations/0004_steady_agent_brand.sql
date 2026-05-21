@@ -1,0 +1,2 @@
+CREATE INDEX IF NOT EXISTS "platform_classifications_entity_asof_idx" ON "platform_classifications" USING btree ("entity","as_of");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "platform_companies_sector_idx" ON "platform_companies" USING btree ("sector");

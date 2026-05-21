@@ -1,6 +1,6 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { eq, and, desc, asc } from 'drizzle-orm';
+import { eq, and, desc, asc, sql } from 'drizzle-orm';
 import { computePublicScore, publicScoreToSignal, PublicScoreInputs } from '@vantage/core-public';
 import { runLivePublicScore } from '@vantage/core-public/orchestrator';
 import type { LivePublicScoreConfig } from '@vantage/core-public/orchestrator';
@@ -17,6 +17,19 @@ function requireEnv(name: string): string {
 
 const ScoreLiveRequest = z.object({ ticker: z.string().min(1).max(8) });
 const LatestParams = z.object({ ticker: z.string() });
+const HistoryParams = z.object({ ticker: z.string() });
+const HistoryQuery = z.object({
+  days: z.coerce.number().int().min(1).max(1825).default(730),
+});
+
+interface HistoryRow {
+  as_of: string;
+  score: number;
+  label: string;
+  confidence: number;
+  components: { egs?: { score?: number }; nis?: { score?: number }; nhs?: { score?: number } } | null;
+  signal_id: string | null;
+}
 
 export const publicRoutes: FastifyPluginAsyncZod = async (app) => {
   // ── POST /score — compute from pre-built inputs (kept for testing) ─────
@@ -100,6 +113,54 @@ export const publicRoutes: FastifyPluginAsyncZod = async (app) => {
         label: meta.label ?? null,
         score: meta.score ?? signal.magnitude * 100,
         components: meta.components ?? null,
+      };
+    },
+  );
+
+  // ── GET /score-live/history/:ticker — Public Score time-series ─────────
+  // Powers the per-ticker history chart. Component scores are read from the
+  // public_scores.components jsonb (the canonical assembled snapshot), and
+  // each point links back to its audit signal for click-through.
+  app.get(
+    '/score-live/history/:ticker',
+    { schema: { params: HistoryParams, querystring: HistoryQuery } },
+    async (req) => {
+      const ticker = req.params.ticker.toUpperCase();
+      const { days } = req.query;
+
+      const company = await db
+        .select({ name: schema.platformCompanies.name })
+        .from(schema.platformCompanies)
+        .where(eq(schema.platformCompanies.ticker, ticker))
+        .limit(1);
+      const name = company[0]?.name ?? ticker;
+
+      const rows = (await db.execute(sql`
+        SELECT ps.as_of, ps.score, ps.label, ps.confidence, ps.components,
+               s.id AS signal_id
+        FROM public_scores ps
+        LEFT JOIN platform_signals s
+          ON s.entity = ps.ticker
+         AND s.signal_type = 'public.score'
+         AND s.timestamp = ps.as_of
+        WHERE ps.ticker = ${ticker}
+          AND ps.as_of >= now() - (${days} || ' days')::interval
+        ORDER BY ps.as_of ASC
+      `)) as unknown as HistoryRow[];
+
+      return {
+        ticker,
+        name,
+        series: rows.map((r) => ({
+          asOf: new Date(r.as_of).toISOString().slice(0, 10),
+          score: r.score,
+          label: r.label,
+          confidence: r.confidence,
+          egs: r.components?.egs?.score ?? null,
+          nis: r.components?.nis?.score ?? null,
+          nhs: r.components?.nhs?.score ?? null,
+          signalId: r.signal_id,
+        })),
       };
     },
   );

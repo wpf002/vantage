@@ -128,7 +128,17 @@ export default async function ClassificationsPage({
 
   return (
     <article className="grid grid-cols-12 gap-x-10 gap-y-10">
-      <nav className="col-span-12 flex flex-wrap gap-6 border-b border-ink-100 pb-4">
+      <header className="col-span-12 border-b border-ink-100 pb-8">
+        <h1 className="font-display text-5xl xl:text-6xl tracking-editorial leading-tight mb-4">
+          Where Every Read Lands
+        </h1>
+        <p className="font-serif text-deck text-ink-800 max-w-measure leading-relaxed">
+          Every company Vantage has scored, sorted into one of four asset classes — Core, High
+          Asymmetry, Tactical, or Avoid.
+        </p>
+      </header>
+
+      <nav className="col-span-12 -mt-10 flex flex-wrap items-center gap-6 border-b border-ink-100 py-4">
         {FILTERS.map((f) => {
           const isActive = active === f.key;
           const href = (f.key === 'ALL'
@@ -152,16 +162,13 @@ export default async function ClassificationsPage({
       </nav>
 
       <section className="col-span-12 space-y-16">
-        {groupsToRender.map((cls, idx) => {
+        {groupsToRender.map((cls) => {
           const meta = CLASS_META[cls];
           const items = grouped[cls];
           return (
-            <div key={cls} className={idx > 0 ? 'border-t border-ink-100 pt-16' : ''}>
+            <div key={cls}>
               <div className="border-b border-ink-100 pb-4 mb-6">
-                <p className="eyebrow mb-2">{meta.label}</p>
-                <p className="font-serif text-base text-ink-700 max-w-measure leading-relaxed">
-                  {meta.deck}
-                </p>
+                <p className="eyebrow">{meta.label}</p>
               </div>
 
               {items.length === 0 ? (

@@ -144,6 +144,9 @@ export const platformCompanies = pgTable(
       .on(t.ticker)
       .where(sql`${t.ticker} IS NOT NULL`),
     nameIdx: index('platform_companies_name_idx').on(t.name),
+    // Phase 9 — the screener filters and sorts by sector across the whole
+    // public universe.
+    sectorIdx: index('platform_companies_sector_idx').on(t.sector),
   }),
 );
 
@@ -189,15 +192,23 @@ export const platformAudit = pgTable(
   }),
 );
 
-export const platformClassifications = pgTable('platform_classifications', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  entity: text('entity').notNull(),
-  assetClass: assetClassEnum('asset_class').notNull(),
-  confidence: real('confidence').notNull(),
-  rationale: text('rationale').notNull(),
-  contributingSignals: jsonb('contributing_signals').notNull(),
-  asOf: timestamp('as_of', { withTimezone: true }).notNull(),
-});
+export const platformClassifications = pgTable(
+  'platform_classifications',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    entity: text('entity').notNull(),
+    assetClass: assetClassEnum('asset_class').notNull(),
+    confidence: real('confidence').notNull(),
+    rationale: text('rationale').notNull(),
+    contributingSignals: jsonb('contributing_signals').notNull(),
+    asOf: timestamp('as_of', { withTimezone: true }).notNull(),
+  },
+  (t) => ({
+    // Phase 9 — the screener and daily board both resolve the latest
+    // classification per entity (DISTINCT ON entity ORDER BY as_of DESC).
+    entityAsOfIdx: index('platform_classifications_entity_asof_idx').on(t.entity, t.asOf),
+  }),
+);
 
 export const platformPortfolios = pgTable(
   'platform_portfolios',

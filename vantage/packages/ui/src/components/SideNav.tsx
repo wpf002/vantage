@@ -14,8 +14,11 @@ const NAV = [
   { href: '/', label: 'Home' },
   { href: '/portfolios', label: 'Portfolios' },
   { href: '/classifications', label: 'Classifications' },
+  { href: '/screener', label: 'Stock Screener' },
+  { href: '/board', label: 'Daily Updates' },
   { href: '/simulation', label: 'Simulations' },
   { href: '/audit', label: 'Audit' },
+  { href: '/meta', label: 'Meta' },
 ] as const;
 
 export async function SideNav() {

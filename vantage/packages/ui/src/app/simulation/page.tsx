@@ -123,7 +123,10 @@ export default async function SimulationPickerPage({ searchParams }: PageProps) 
   return (
     <div className="grid grid-cols-12 gap-x-10 gap-y-10">
       <header className="col-span-12 border-b border-ink-100 pb-10">
-        <p className="font-serif text-deck text-ink-700 max-w-measure">
+        <h1 className="font-display text-5xl xl:text-6xl tracking-editorial leading-tight mb-4">
+          Thousands of Futures
+        </h1>
+        <p className="font-serif text-deck text-ink-800 max-w-measure leading-relaxed">
           Stress-test portfolio performance across market scenarios.
         </p>
       </header>
@@ -280,7 +283,7 @@ export default async function SimulationPickerPage({ searchParams }: PageProps) 
 
           <button
             type="submit"
-            className="font-display text-2xl text-editorial border-b-2 border-editorial hover:text-editorial-dark hover:border-editorial-dark"
+            className="-mt-6 font-display text-lg text-editorial border-b-2 border-editorial hover:text-editorial-dark hover:border-editorial-dark"
           >
             Run It &rarr;
           </button>

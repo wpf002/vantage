@@ -386,6 +386,17 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
             Every input and transform step behind this score.
           </p>
         </div>
+        <div>
+          <Link
+            href={`/public/${ticker}/history` as Route}
+            className="font-display text-base text-editorial border-b-2 border-editorial hover:text-editorial-dark hover:border-editorial-dark"
+          >
+            See Score History &rarr;
+          </Link>
+          <p className="font-serif italic text-xs text-ink-500 mt-2">
+            The Public Score and its components over the trailing 24 months.
+          </p>
+        </div>
       </aside>
     </article>
   );

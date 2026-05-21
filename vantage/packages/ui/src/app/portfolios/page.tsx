@@ -23,7 +23,10 @@ export default async function PortfoliosIndex() {
   return (
     <div className="grid grid-cols-12 gap-x-10 gap-y-12">
       <header className="col-span-12 border-b border-ink-100 pb-10">
-        <p className="font-serif text-deck text-ink-700 max-w-measure">
+        <h1 className="font-display text-5xl xl:text-6xl tracking-editorial leading-tight mb-4">
+          From Reads to Positions
+        </h1>
+        <p className="font-serif text-deck text-ink-800 max-w-measure leading-relaxed">
           Default — rebuilt nightly from current classifications. Your own — sized to your
           constraints.
         </p>

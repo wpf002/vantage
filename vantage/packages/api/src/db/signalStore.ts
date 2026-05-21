@@ -210,12 +210,28 @@ export function mapSectorString(raw: string | undefined): Sector {
  * (Phase 8 meta-learning can refine it later).
  */
 export async function ensureCompany(db: DB, profile: FmpProfile) {
+  // Phase 9 — the screener filters by market cap, so stash it (USD) on the
+  // company's metadata at the wire boundary. Best-effort: FMP omits it for
+  // some tickers, and pre-Phase-9 rows simply read back null.
+  const metadata = profile.marketCap != null ? { marketCap: profile.marketCap } : null;
+
   const existing = await db
     .select()
     .from(schema.platformCompanies)
     .where(eq(schema.platformCompanies.ticker, profile.symbol))
     .limit(1);
-  if (existing.length > 0) return existing[0]!;
+  if (existing.length > 0) {
+    const row = existing[0]!;
+    // Backfill a freshly-available market cap onto an older row that lacks one.
+    const existingCap = (row.metadata as { marketCap?: number } | null)?.marketCap;
+    if (profile.marketCap != null && existingCap == null) {
+      await db
+        .update(schema.platformCompanies)
+        .set({ metadata: { ...(row.metadata as object | null), marketCap: profile.marketCap } })
+        .where(eq(schema.platformCompanies.id, row.id));
+    }
+    return row;
+  }
 
   const [row] = await db
     .insert(schema.platformCompanies)
@@ -226,6 +242,7 @@ export async function ensureCompany(db: DB, profile: FmpProfile) {
       sector: mapSectorString(profile.sector),
       lifeStage: 'public_mature',
       country: 'US',
+      metadata,
     })
     .onConflictDoNothing()
     .returning();
