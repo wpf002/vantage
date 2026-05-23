@@ -31,6 +31,24 @@ export const authConfig: NextAuthConfig = {
     verificationTokensTable: authSchema.verificationTokens,
   }),
   session: { strategy: 'database' },
+  // Behind Railway's HTTPS proxy, Auth.js's default cookie name becomes
+  // `__Secure-authjs.session-token`, but the hand-rolled startSession() in
+  // credentials.ts writes `authjs.session-token`. Pinning the name here keeps
+  // both sides in sync across dev (HTTP) and prod (HTTPS).
+  cookies: {
+    sessionToken: {
+      name: 'authjs.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+  },
+  // Required when Next.js sits behind a reverse proxy (Railway, Vercel, etc.)
+  // so Auth.js trusts the X-Forwarded-Host header.
+  trustHost: true,
   pages: {
     signIn: '/signin',
     error: '/signin/error',

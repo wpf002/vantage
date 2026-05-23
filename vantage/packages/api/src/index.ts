@@ -83,7 +83,8 @@ async function buildServer() {
 async function main() {
   const app = await buildServer();
   const host = process.env.API_HOST ?? '0.0.0.0';
-  const port = Number(process.env.API_PORT ?? 4000);
+  // Railway and most PaaS providers inject PORT. Honor it when API_PORT isn't set.
+  const port = Number(process.env.API_PORT ?? process.env.PORT ?? 4000);
 
   try {
     await app.listen({ host, port });
