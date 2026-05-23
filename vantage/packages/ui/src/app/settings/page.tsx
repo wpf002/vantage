@@ -25,7 +25,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="grid grid-cols-12 gap-x-10 gap-y-10">
-      <section className="col-span-12 lg:col-span-8">
+      <section className="col-span-12">
         <table className="editorial-table">
           <tbody>
             <tr>

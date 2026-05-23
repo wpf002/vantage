@@ -237,7 +237,7 @@ function MonteCarloResult({
         </div>
       </section>
 
-      <aside className="col-span-12 lg:col-span-4 lg:border-l lg:border-ink-100 lg:pl-10 space-y-10">
+      <aside className="col-span-12 lg:col-span-4 lg:border-l lg:border-ink-100 lg:pl-10 space-y-10 self-start lg:sticky lg:top-12">
         <PortfolioBlock name={portfolioName} href={portfolioHref} />
         <AssumptionsBlock assumptions={assumptions} />
         <ReplayBlock sim={sim} replayHref={replayHref} />
@@ -319,7 +319,7 @@ function ScenarioTreeResult({
         </p>
       </section>
 
-      <aside className="col-span-12 lg:col-span-4 lg:border-l lg:border-ink-100 lg:pl-10 space-y-10">
+      <aside className="col-span-12 lg:col-span-4 lg:border-l lg:border-ink-100 lg:pl-10 space-y-10 self-start lg:sticky lg:top-12">
         <PortfolioBlock name={portfolioName} href={portfolioHref} />
         <AssumptionsBlock assumptions={assumptions} />
         <div>
@@ -396,8 +396,8 @@ function RegimeResult({
               <tr>
                 <th>Regime</th>
                 <th className="num">Occupancy</th>
-                <th className="num">μ</th>
-                <th className="num">σ</th>
+                <th className="num">Return</th>
+                <th className="num">Volatility</th>
               </tr>
             </thead>
             <tbody>
@@ -417,7 +417,7 @@ function RegimeResult({
         </div>
       </section>
 
-      <aside className="col-span-12 lg:col-span-4 lg:border-l lg:border-ink-100 lg:pl-10 space-y-10">
+      <aside className="col-span-12 lg:col-span-4 lg:border-l lg:border-ink-100 lg:pl-10 space-y-10 self-start lg:sticky lg:top-12">
         <PortfolioBlock name={portfolioName} href={portfolioHref} />
         <AssumptionsBlock assumptions={assumptions} />
         <div>
@@ -477,8 +477,8 @@ function AssumptionsBlock({ assumptions }: { assumptions: AssumptionRow[] }) {
           <thead>
             <tr>
               <th>Holding</th>
-              <th className="num">μ</th>
-              <th className="num">σ</th>
+              <th className="num">Return</th>
+              <th className="num">Volatility</th>
             </tr>
           </thead>
           <tbody>
@@ -538,7 +538,7 @@ function ReplayBlock({
 function AuditLinkback({ href }: { href: string | null }) {
   if (!href) return null;
   return (
-    <div>
+    <div className="border-t border-ink-100 pt-6">
       <Link
         href={href as Route}
         className="font-display text-base text-editorial border-b-2 border-editorial hover:text-editorial-dark hover:border-editorial-dark"

@@ -97,7 +97,7 @@ export function PortfolioDetailView({ portfolio }: { portfolio: PortfolioDetail 
             No holdings yet. Run a rebuild once the universe has enough current classifications.
           </p>
         ) : (
-          <table className="editorial-table">
+          <table className="editorial-table [&>tbody>tr:last-child>td]:border-b-0">
             <thead>
               <tr>
                 <th>Holding</th>

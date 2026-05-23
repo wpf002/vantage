@@ -227,8 +227,8 @@ export default async function SimulationPickerPage({ searchParams }: PageProps) 
 
           {/* ── Parameters ───────────────────────────────────────────── */}
           <section>
-            <p className="eyebrow mb-4">Set Parameters</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6 max-w-3xl">
+            <p className="eyebrow mb-6 text-center">Set Parameters</p>
+            <div className="flex flex-col items-center sm:flex-row sm:justify-center gap-x-20 gap-y-6">
               <div>
                 <label htmlFor="horizon" className="eyebrow block mb-2">
                   Horizon

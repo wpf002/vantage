@@ -17,6 +17,8 @@ import { portfoliosRoutes } from './routes/portfolios.js';
 import { screenerRoutes } from './routes/screener.js';
 import { boardRoutes } from './routes/board.js';
 import { metaRoutes } from './routes/meta.js';
+import { watchlistsRoutes } from './routes/watchlists.js';
+import { alertsRoutes } from './routes/alerts.js';
 import { registerSessionMiddleware } from './middleware/session.js';
 import { startWorkers, stopWorkers } from './queues/workers.js';
 import { closeQueues } from './queues/index.js';
@@ -72,6 +74,8 @@ async function buildServer() {
   await app.register(screenerRoutes, { prefix: '/v1/screener' });
   await app.register(boardRoutes, { prefix: '/v1/board' });
   await app.register(metaRoutes, { prefix: '/v1/meta' });
+  await app.register(watchlistsRoutes, { prefix: '/v1/watchlists' });
+  await app.register(alertsRoutes, { prefix: '/v1/alerts' });
 
   return app;
 }

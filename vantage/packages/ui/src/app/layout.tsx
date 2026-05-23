@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Playfair_Display, Source_Serif_4, Inter, IBM_Plex_Mono } from 'next/font/google';
 import { Header } from '@/components/Header';
 import { SideNav } from '@/components/SideNav';
+import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 import '@/styles/globals.css';
 
 const display = Playfair_Display({
@@ -57,6 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${display.variable} ${serif.variable} ${sans.variable} ${mono.variable}`}
     >
       <body className="h-screen overflow-hidden flex flex-col">
+        <ServiceWorkerRegistration />
         <Header />
         <div className="flex flex-1 min-h-0">
           <SideNav />

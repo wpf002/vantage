@@ -43,7 +43,7 @@ export default async function PortfoliosIndex() {
           </Link>
         </div>
         {system ? (
-          <table className="editorial-table max-w-2xl">
+          <table className="editorial-table">
             <thead>
               <tr>
                 <th>Group</th>

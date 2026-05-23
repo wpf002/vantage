@@ -37,3 +37,15 @@ export {
   type PersistSimulationParams,
   type PersistSimulationResult,
 } from './db/simulationStore.js';
+// Phase 10 — alert + narrative-tag primitives for the CLI. All queue-free, so
+// importing them does not open a Redis connection.
+export {
+  listRulesForUser,
+  listEvents,
+  getRuleById,
+  type AlertRuleRow,
+  type EventFeedItem,
+} from './db/alertStore.js';
+export { describeRule, type AlertRuleType } from './alerts/config.js';
+export { fireRule } from './alerts/fire.js';
+export { tagNarrativeForTicker, type NarrativeTagResult } from './jobs/narrativeTag.js';

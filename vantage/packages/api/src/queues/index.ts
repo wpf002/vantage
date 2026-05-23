@@ -23,6 +23,17 @@ export const META_OUTCOME_QUEUE_NAME = 'vantage.meta.outcome';
 // Phase 8 — daily universe re-scoring: keeps fresh decisions landing so the
 // decision log (and therefore meta-learning) grows without manual input.
 export const UNIVERSE_SCORE_QUEUE_NAME = 'vantage.universe.score';
+// Universe loader — weekly refresh of the Russell-3000-approximation
+// listing in `platform_companies` (handles IPOs, delistings, and Russell
+// reconstitutions). One-shot version is the `load:universe` CLI script.
+export const UNIVERSE_LOAD_QUEUE_NAME = 'vantage.universe.load';
+// Weekly Vantage growth report email — coverage, signal highlights, and
+// engine quality, delivered through Resend.
+export const PROGRESS_REPORT_QUEUE_NAME = 'vantage.report.weekly';
+// Phase 10 — time-based Morning Read digest delivery (cron, every 15 min).
+export const MORNING_DIGEST_QUEUE_NAME = 'vantage.alerts.morning-digest';
+// Phase 10 — per-ticker news-assisted narrative tagging jobs.
+export const NARRATIVE_TAG_QUEUE_NAME = 'vantage.narrative.tag';
 
 export interface HarmonizeJob {
   signalId: string;
@@ -48,6 +59,29 @@ export interface UniverseScoreJob {
   reason: 'cron' | 'manual';
   /** Optional cap on how many tickers to score this run. */
   limit?: number;
+}
+
+export interface UniverseLoadJob {
+  reason: 'cron' | 'manual';
+  /** Override the default $200M market-cap floor — useful for test runs. */
+  minMarketCapUsd?: number;
+  /** Optional cap on how many rows to upsert this run. */
+  limit?: number;
+}
+
+export interface WeeklyProgressReportJob {
+  reason: 'cron' | 'manual';
+  /** Override the configured PROGRESS_REPORT_EMAIL recipient. */
+  to?: string;
+}
+
+export interface MorningDigestJob {
+  reason: 'cron' | 'manual';
+}
+
+export interface NarrativeTagJob {
+  ticker: string;
+  reason: 'cron' | 'manual';
 }
 
 const REDIS_URL = process.env.REDIS_URL ?? 'redis://localhost:6379';
@@ -91,6 +125,26 @@ export const metaOutcomeQueue = new Queue<MetaOutcomeJob>(META_OUTCOME_QUEUE_NAM
 });
 
 export const universeScoreQueue = new Queue<UniverseScoreJob>(UNIVERSE_SCORE_QUEUE_NAME, {
+  connection,
+  defaultJobOptions,
+});
+
+export const universeLoadQueue = new Queue<UniverseLoadJob>(UNIVERSE_LOAD_QUEUE_NAME, {
+  connection,
+  defaultJobOptions,
+});
+
+export const progressReportQueue = new Queue<WeeklyProgressReportJob>(
+  PROGRESS_REPORT_QUEUE_NAME,
+  { connection, defaultJobOptions },
+);
+
+export const morningDigestQueue = new Queue<MorningDigestJob>(MORNING_DIGEST_QUEUE_NAME, {
+  connection,
+  defaultJobOptions,
+});
+
+export const narrativeTagQueue = new Queue<NarrativeTagJob>(NARRATIVE_TAG_QUEUE_NAME, {
   connection,
   defaultJobOptions,
 });
@@ -161,6 +215,67 @@ export async function ensureUniverseScoreSchedule(): Promise<void> {
   }
 }
 
+/**
+ * Schedule the weekly Vantage growth-report email. Default Sunday 14:00 UTC
+ * (10:00 ET). Disabled when `PROGRESS_REPORT_DISABLED=1` is set — the user
+ * can flip this once the 90-day window is up rather than carry calendar
+ * logic in the worker.
+ */
+export async function ensureWeeklyProgressReportSchedule(): Promise<void> {
+  if (process.env.PROGRESS_REPORT_DISABLED === '1') return;
+  const pattern = process.env.PROGRESS_REPORT_CRON || '0 14 * * 0';
+  try {
+    await progressReportQueue.upsertJobScheduler(
+      'progress-report-weekly',
+      { pattern, tz: 'UTC' },
+      { name: 'send', data: { reason: 'cron' } },
+    );
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[queues] failed to register progress report cron', err);
+  }
+}
+
+/**
+ * Schedule the weekly universe-load refresh. Default Sunday 23:00 UTC —
+ * runs before the daily 01:00 UTC universe-score sweep on Monday morning,
+ * so the new rows are picked up immediately. Russell rebalances annually
+ * in June, but a weekly cadence catches IPOs and significant cap shifts
+ * without needing manual intervention.
+ */
+export async function ensureUniverseLoadSchedule(): Promise<void> {
+  const pattern = process.env.UNIVERSE_LOAD_CRON || '0 23 * * 0';
+  try {
+    await universeLoadQueue.upsertJobScheduler(
+      'universe-load-weekly',
+      { pattern, tz: 'UTC' },
+      { name: 'load', data: { reason: 'cron' } },
+    );
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[queues] failed to register universe load cron', err);
+  }
+}
+
+/**
+ * Schedule the Morning Read digest sweep. Runs every 15 minutes; each tick the
+ * worker checks which morning_digest rules are due in their local timezone.
+ * 15-minute granularity is good enough for "send at 7am".
+ */
+export async function ensureMorningDigestSchedule(): Promise<void> {
+  const pattern = process.env.MORNING_DIGEST_CRON || '*/15 * * * *';
+  try {
+    await morningDigestQueue.upsertJobScheduler(
+      'morning-digest-sweep',
+      { pattern, tz: 'UTC' },
+      { name: 'sweep', data: { reason: 'cron' } },
+    );
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[queues] failed to register morning digest cron', err);
+  }
+}
+
 export async function closeQueues(): Promise<void> {
   await Promise.allSettled([
     harmonizeQueue.close(),
@@ -168,6 +283,10 @@ export async function closeQueues(): Promise<void> {
     systemPortfolioQueue.close(),
     metaOutcomeQueue.close(),
     universeScoreQueue.close(),
+    universeLoadQueue.close(),
+    progressReportQueue.close(),
+    morningDigestQueue.close(),
+    narrativeTagQueue.close(),
   ]);
   await connection.quit().catch(() => undefined);
 }

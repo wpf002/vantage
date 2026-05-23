@@ -10,22 +10,38 @@ import {
   CLASSIFICATION_QUEUE_NAME,
   HARMONIZE_QUEUE_NAME,
   META_OUTCOME_QUEUE_NAME,
+  MORNING_DIGEST_QUEUE_NAME,
+  NARRATIVE_TAG_QUEUE_NAME,
+  PROGRESS_REPORT_QUEUE_NAME,
   SYSTEM_PORTFOLIO_QUEUE_NAME,
+  UNIVERSE_LOAD_QUEUE_NAME,
   UNIVERSE_SCORE_QUEUE_NAME,
   classificationQueue,
   connection,
   ensureMetaOutcomeSchedule,
+  ensureMorningDigestSchedule,
   ensureSystemPortfolioSchedule,
+  ensureUniverseLoadSchedule,
   ensureUniverseScoreSchedule,
+  ensureWeeklyProgressReportSchedule,
   type ClassificationJob,
   type HarmonizeJob,
   type MetaOutcomeJob,
+  type MorningDigestJob,
+  type NarrativeTagJob,
   type SystemPortfolioJob,
+  type UniverseLoadJob,
   type UniverseScoreJob,
+  type WeeklyProgressReportJob,
 } from './index.js';
 import { rebuildSystemPortfolio } from '../jobs/systemPortfolio.js';
 import { captureOutcomes } from '../jobs/outcomeCapture.js';
 import { scoreUniverse } from '../jobs/universeScore.js';
+import { loadUniverse } from '../jobs/loadUniverse.js';
+import { sendWeeklyProgressReport } from '../jobs/weeklyProgressReport.js';
+import { HARMONIZED_SIGNAL_CHANNEL, startAlertEvaluator, stopAlertEvaluator } from '../workers/alerts.js';
+import { runMorningDigest } from '../jobs/morningDigest.js';
+import { tagNarrativeForTicker } from '../jobs/narrativeTag.js';
 
 /**
  * Phase 4 workers. They run in the same Node process as the Fastify API for
@@ -165,6 +181,24 @@ async function handleHarmonize(job: Job<HarmonizeJob>): Promise<void> {
     throw err;
   }
 
+  // Phase 10 — publish to the pub/sub channel the alert evaluator subscribes
+  // to. Best-effort: a Redis publish failure must not block classification.
+  try {
+    await connection.publish(
+      HARMONIZED_SIGNAL_CHANNEL,
+      JSON.stringify({
+        signalId,
+        entity,
+        signalType,
+        direction: signal.direction,
+        magnitude: signal.magnitude,
+        timestamp: signal.timestamp,
+      }),
+    );
+  } catch (err) {
+    log.warn({ signalId, err: (err as Error).message }, 'harmonize: pub/sub publish failed');
+  }
+
   // Loop-prevention: a `platform.classification` Signal is itself the OUTPUT
   // of the classifier. Re-enqueuing classification on it would re-classify
   // forever. Drop here so the queue settles.
@@ -223,6 +257,35 @@ async function handleUniverseScore(job: Job<UniverseScoreJob>): Promise<void> {
   log.info(res, 'universe score: done');
 }
 
+async function handleUniverseLoad(job: Job<UniverseLoadJob>): Promise<void> {
+  log.info({ jobId: job.id, reason: job.data.reason }, 'universe load: start');
+  const res = await loadUniverse({
+    minMarketCapUsd: job.data.minMarketCapUsd,
+    limit: job.data.limit,
+  });
+  log.info(res, 'universe load: done');
+}
+
+async function handleWeeklyProgressReport(
+  job: Job<WeeklyProgressReportJob>,
+): Promise<void> {
+  log.info({ jobId: job.id, reason: job.data.reason }, 'progress report: start');
+  const res = await sendWeeklyProgressReport({ to: job.data.to });
+  log.info({ to: res.to, dispatched: res.dispatched }, 'progress report: done');
+}
+
+async function handleMorningDigest(job: Job<MorningDigestJob>): Promise<void> {
+  log.info({ jobId: job.id, reason: job.data.reason }, 'morning digest: start');
+  const res = await runMorningDigest();
+  log.info(res, 'morning digest: done');
+}
+
+async function handleNarrativeTag(job: Job<NarrativeTagJob>): Promise<void> {
+  log.info({ jobId: job.id, ticker: job.data.ticker }, 'narrative tag: start');
+  const res = await tagNarrativeForTicker(job.data.ticker);
+  log.info(res, 'narrative tag: done');
+}
+
 export function startWorkers(): void {
   if (workers.length > 0) return; // idempotent — guard against double-start
 
@@ -277,24 +340,78 @@ export function startWorkers(): void {
   });
   universeScoreWorker.on('ready', () => log.info('universe score worker ready'));
 
+  const universeLoadWorker = new Worker<UniverseLoadJob>(
+    UNIVERSE_LOAD_QUEUE_NAME,
+    handleUniverseLoad,
+    { connection, concurrency: 1 },
+  );
+  universeLoadWorker.on('failed', (job, err) => {
+    log.error({ jobId: job?.id, err: err.message }, 'universe load: failed');
+  });
+  universeLoadWorker.on('ready', () => log.info('universe load worker ready'));
+
+  const progressReportWorker = new Worker<WeeklyProgressReportJob>(
+    PROGRESS_REPORT_QUEUE_NAME,
+    handleWeeklyProgressReport,
+    { connection, concurrency: 1 },
+  );
+  progressReportWorker.on('failed', (job, err) => {
+    log.error({ jobId: job?.id, err: err.message }, 'progress report: failed');
+  });
+  progressReportWorker.on('ready', () => log.info('progress report worker ready'));
+
+  const morningDigestWorker = new Worker<MorningDigestJob>(
+    MORNING_DIGEST_QUEUE_NAME,
+    handleMorningDigest,
+    { connection, concurrency: 1 },
+  );
+  morningDigestWorker.on('failed', (job, err) => {
+    log.error({ jobId: job?.id, err: err.message }, 'morning digest: failed');
+  });
+  morningDigestWorker.on('ready', () => log.info('morning digest worker ready'));
+
+  // Cap narrative tagging at 3 concurrent jobs to stay under Anthropic rate
+  // limits (Phase 10 cost-control).
+  const narrativeTagWorker = new Worker<NarrativeTagJob>(
+    NARRATIVE_TAG_QUEUE_NAME,
+    handleNarrativeTag,
+    { connection, concurrency: 3 },
+  );
+  narrativeTagWorker.on('failed', (job, err) => {
+    log.error({ jobId: job?.id, ticker: job?.data.ticker, err: err.message }, 'narrative tag: failed');
+  });
+  narrativeTagWorker.on('ready', () => log.info('narrative tag worker ready'));
+
   workers = [
     harmonizeWorker,
     classificationWorker,
     systemPortfolioWorker,
     metaOutcomeWorker,
     universeScoreWorker,
+    universeLoadWorker,
+    progressReportWorker,
+    morningDigestWorker,
+    narrativeTagWorker,
   ];
+
+  // Phase 10 — reactive alert evaluator subscribes to the harmonized-signal
+  // pub/sub channel (separate from the BullMQ workers above).
+  startAlertEvaluator();
 
   // Register the repeatable schedules — fire-and-forget; failures are logged
   // inside the ensure* helpers.
   void ensureSystemPortfolioSchedule();
   void ensureMetaOutcomeSchedule();
   void ensureUniverseScoreSchedule();
+  void ensureUniverseLoadSchedule();
+  void ensureWeeklyProgressReportSchedule();
+  void ensureMorningDigestSchedule();
 
   log.info('workers started');
 }
 
 export async function stopWorkers(): Promise<void> {
+  await stopAlertEvaluator();
   await Promise.allSettled(workers.map((w) => w.close()));
   workers = [];
 }

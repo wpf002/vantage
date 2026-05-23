@@ -27,6 +27,13 @@ export interface LivePublicScoreConfig {
   fmpApiKey: string;
   /** Reserved for Phase 3.5 — currently unused on the public side. */
   mlServiceUrl?: string;
+  /**
+   * Phase 10 — news-assisted narrative tags. When supplied (by the API caller
+   * via getNarrativeTagsForTicker) and any segment clears the confidence floor,
+   * NIS marks those segments as the narrative instead of the rule-based
+   * heuristic. The LLM only *identifies* the segment; the NIS math is unchanged.
+   */
+  narrativeTags?: Array<{ name: string; confidence: number }>;
 }
 
 export interface LivePublicScoreResult {
@@ -183,7 +190,13 @@ interface NisBuild {
  * segment so the score still computes (with lower NIS confidence) rather than
  * throwing.
  */
-function buildNisInputs(bundle: PublicDataBundle): NisBuild {
+/** Tags clearing this confidence are trusted to define the narrative segment. */
+const NARRATIVE_TAG_CONFIDENCE_FLOOR = 0.5;
+
+function buildNisInputs(
+  bundle: PublicDataBundle,
+  narrativeTags?: Array<{ name: string; confidence: number }>,
+): NisBuild {
   const derivedGrowthPct = deriveCompanyGrowthPct(bundle.earnings);
 
   const synthetic = (note: string): NisBuild => ({
@@ -234,24 +247,48 @@ function buildNisInputs(bundle: PublicDataBundle): NisBuild {
     };
   });
 
-  // Heuristic: the largest fast-growing segment, else the largest by share —
-  // but only segments with a meaningful revenue share are eligible, so a tiny
-  // "Other" line can't be mistaken for the company's story.
-  const eligible = built.filter((s) => s.revenueSharePct >= NARRATIVE_MIN_SHARE);
-  const candidates = eligible.length > 0 ? eligible : built;
-
-  const growing = candidates.filter((s) => s.yoyGrowthPct > 0);
-  let narrative: SegmentDatum | undefined;
-  if (growing.length > 0) {
-    const fastest = growing.reduce((a, b) => (b.yoyGrowthPct > a.yoyGrowthPct ? b : a));
-    if (fastest.yoyGrowthPct > 2 * Math.max(companyGrowthPct, 0.0001)) {
-      narrative = fastest;
+  // Phase 10 — if news-assisted tags clear the confidence floor, let them
+  // define the narrative segment(s) by name match. The LLM only identifies
+  // *which* segment matters; the NIS math below is unchanged. Fall back to the
+  // rule-based heuristic when no confident tag matches a reported segment.
+  const confidentTags = (narrativeTags ?? []).filter(
+    (t) => t.confidence >= NARRATIVE_TAG_CONFIDENCE_FLOOR,
+  );
+  let taggedAny = false;
+  if (confidentTags.length > 0) {
+    for (const seg of built) {
+      const segLower = seg.name.toLowerCase();
+      const match = confidentTags.some((t) => {
+        const tl = t.name.toLowerCase();
+        return tl === segLower || tl.includes(segLower) || segLower.includes(tl);
+      });
+      if (match) {
+        seg.isNarrativeSegment = true;
+        taggedAny = true;
+      }
     }
   }
-  if (!narrative) {
-    narrative = candidates.reduce((a, b) => (b.revenueSharePct > a.revenueSharePct ? b : a));
+
+  if (!taggedAny) {
+    // Heuristic: the largest fast-growing segment, else the largest by share —
+    // but only segments with a meaningful revenue share are eligible, so a tiny
+    // "Other" line can't be mistaken for the company's story.
+    const eligible = built.filter((s) => s.revenueSharePct >= NARRATIVE_MIN_SHARE);
+    const candidates = eligible.length > 0 ? eligible : built;
+
+    const growing = candidates.filter((s) => s.yoyGrowthPct > 0);
+    let narrative: SegmentDatum | undefined;
+    if (growing.length > 0) {
+      const fastest = growing.reduce((a, b) => (b.yoyGrowthPct > a.yoyGrowthPct ? b : a));
+      if (fastest.yoyGrowthPct > 2 * Math.max(companyGrowthPct, 0.0001)) {
+        narrative = fastest;
+      }
+    }
+    if (!narrative) {
+      narrative = candidates.reduce((a, b) => (b.revenueSharePct > a.revenueSharePct ? b : a));
+    }
+    narrative.isNarrativeSegment = true;
   }
-  narrative.isNarrativeSegment = true;
 
   // historicalConsistency — ratio of segments that grew positively in both the
   // current and the prior period (a proxy for narrative stability).
@@ -274,7 +311,9 @@ function buildNisInputs(bundle: PublicDataBundle): NisBuild {
 
   return {
     nisInputs: { currentPeriodSegments: built, historicalConsistency },
-    heuristicNote: HEURISTIC_NOTE,
+    heuristicNote: taggedAny
+      ? `news-assisted narrative tagging (LLM-identified segment; confidence >= ${NARRATIVE_TAG_CONFIDENCE_FLOOR})`
+      : HEURISTIC_NOTE,
   };
 }
 
@@ -341,7 +380,7 @@ export async function runLivePublicScore(
 
   // ── Phases 2-4: synthesize engine inputs ──────────────────────────────
   const egs = buildEgsInputs(ticker, bundle);
-  const nis = buildNisInputs(bundle);
+  const nis = buildNisInputs(bundle, config.narrativeTags);
   const nhsInputs = buildNhsInputs(bundle);
 
   // ── Phase 5: compute, emit Signal, return with full input snapshot ────

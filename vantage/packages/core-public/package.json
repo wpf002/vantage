@@ -7,7 +7,8 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": "./dist/index.js",
-    "./orchestrator": "./dist/orchestrator/index.js"
+    "./orchestrator": "./dist/orchestrator/index.js",
+    "./narrative-tagging": "./dist/narrative-tagging/index.js"
   },
   "scripts": {
     "build": "tsc -b",
@@ -19,6 +20,7 @@
   "dependencies": {
     "@vantage/data-ingest": "workspace:*",
     "@vantage/shared": "workspace:*",
+    "drizzle-orm": "^0.36.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {

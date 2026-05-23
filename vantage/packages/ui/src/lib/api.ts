@@ -4,6 +4,9 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const resp = await fetch(`${BASE}${path}`, {
     ...init,
     headers: { 'content-type': 'application/json', ...(init?.headers ?? {}) },
+    // Phase 10 — forward the NextAuth session cookie so authed client calls
+    // (push subscribe, test alert) reach the API as the signed-in user.
+    credentials: 'include',
     cache: 'no-store',
   });
   if (!resp.ok) {

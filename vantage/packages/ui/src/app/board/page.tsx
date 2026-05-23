@@ -124,7 +124,7 @@ function MoversTable({ rows }: { rows: Mover[] }) {
           <th>Ticker</th>
           <th>Company</th>
           <th>Sector</th>
-          <th className="num">Δ</th>
+          <th className="num">Change</th>
           <th className="num">Score</th>
           <th>Label</th>
         </tr>

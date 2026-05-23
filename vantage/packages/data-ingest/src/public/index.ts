@@ -71,6 +71,30 @@ export const FmpSegment = z.object({
 export type FmpSegment = z.infer<typeof FmpSegment>;
 
 /**
+ * Stock news article (Phase 10 — narrative tagging). Tolerant of the stable
+ * API's field names (`publishedDate`, `site`) and normalized to a stable shape.
+ */
+const FmpStockNewsRaw = z.object({
+  symbol: z.string().optional(),
+  publishedDate: z.string().optional(),
+  date: z.string().optional(),
+  title: z.string(),
+  text: z.string().optional(),
+  site: z.string().optional(),
+  publisher: z.string().optional(),
+  url: z.string().optional(),
+});
+
+export const FmpStockNews = z.object({
+  title: z.string(),
+  text: z.string(),
+  publishedAt: z.string(),
+  source: z.string(),
+  url: z.string(),
+});
+export type FmpStockNews = z.infer<typeof FmpStockNews>;
+
+/**
  * Price-target consensus rolled up by recency window — carries the history the
  * single-snapshot consensus endpoint lacks, so the trailing-90d move is real.
  */
@@ -154,6 +178,27 @@ export const FmpSearchHit = z.object({
   exchangeFullName: z.string().optional(),
 });
 export type FmpSearchHit = z.infer<typeof FmpSearchHit>;
+
+/**
+ * One row of FMP's `/company-screener` response — the universe-listing
+ * endpoint used to populate `platform_companies` for the Russell-3000
+ * approximation. FMP omits sector/marketCap on a small number of micro-cap
+ * rows, so both are nullable.
+ */
+export const FmpScreenerRow = z.object({
+  symbol: z.string(),
+  companyName: z.string(),
+  marketCap: z.number().nullable().optional(),
+  sector: z.string().nullable().optional(),
+  industry: z.string().nullable().optional(),
+  exchange: z.string().optional(),
+  exchangeShortName: z.string().optional(),
+  country: z.string().optional(),
+  isEtf: z.boolean().optional(),
+  isFund: z.boolean().optional(),
+  isActivelyTrading: z.boolean().optional(),
+});
+export type FmpScreenerRow = z.infer<typeof FmpScreenerRow>;
 
 export class FmpClient {
   private base: string;
@@ -284,6 +329,40 @@ export class FmpClient {
     );
   }
 
+  /**
+   * Company screener — used as the universe source. FMP doesn't expose a
+   * Russell-3000 constituent endpoint, so we approximate it with a market-cap
+   * cut on US-listed common stocks (NYSE/NASDAQ, actively trading, no ETFs
+   * or funds). A `marketCapMoreThan` of $200M yields ~3,000 names, matching
+   * the Russell 3000 universe within methodology drift.
+   *
+   * Results come back sorted by market cap descending. `limit` is enforced
+   * server-side and the endpoint accepts large values (3,000+) in a single
+   * call — no cursor pagination is needed.
+   */
+  async companyScreener(opts: {
+    marketCapMoreThan?: number;
+    exchanges?: string[]; // e.g. ['NYSE', 'NASDAQ']
+    country?: string;
+    isActivelyTrading?: boolean;
+    isEtf?: boolean;
+    isFund?: boolean;
+    limit?: number;
+  }): Promise<FmpScreenerRow[]> {
+    const parts: string[] = [];
+    if (opts.marketCapMoreThan !== undefined)
+      parts.push(`marketCapMoreThan=${Math.round(opts.marketCapMoreThan)}`);
+    if (opts.exchanges && opts.exchanges.length > 0)
+      parts.push(`exchange=${opts.exchanges.join(',')}`);
+    if (opts.country) parts.push(`country=${opts.country}`);
+    if (opts.isActivelyTrading !== undefined)
+      parts.push(`isActivelyTrading=${opts.isActivelyTrading}`);
+    if (opts.isEtf !== undefined) parts.push(`isEtf=${opts.isEtf}`);
+    if (opts.isFund !== undefined) parts.push(`isFund=${opts.isFund}`);
+    if (opts.limit !== undefined) parts.push(`limit=${opts.limit}`);
+    return this.get(`/company-screener?${parts.join('&')}`, z.array(FmpScreenerRow));
+  }
+
   /** Trailing-twelve-month ratios — we care about price/sales. */
   async ratiosTtm(symbol: string): Promise<FmpRatiosTtm | null> {
     const arr = await this.get(
@@ -304,6 +383,26 @@ export class FmpClient {
       z.array(FmpKeyMetrics),
     );
   }
+
+  /**
+   * Recent stock news headlines + summaries (Phase 10 — narrative tagging).
+   * Uses the stable `/news/stock` endpoint; normalizes the published date and
+   * source field names so callers get a stable shape.
+   */
+  async stockNews(symbol: string, limit = 50): Promise<FmpStockNews[]> {
+    const rows = await this.get(
+      `/news/stock?symbols=${this.wireSymbol(symbol)}&limit=${limit}`,
+      z.array(FmpStockNewsRaw),
+    );
+    return rows.map((r) => ({
+      title: r.title,
+      text: r.text ?? '',
+      publishedAt: r.publishedDate ?? r.date ?? '',
+      source: r.site ?? r.publisher ?? '',
+      url: r.url ?? '',
+    }));
+  }
 }
 
 export * from './live-fetchers.js';
+export * from './universe.js';

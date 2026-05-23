@@ -386,7 +386,7 @@ export function RegimeForm({ portfolios, presets }: RegimeFormProps) {
                 : 'text-ink-300 border-ink-300 cursor-not-allowed'
             }`}
           >
-            {pending ? 'Running…' : 'Run It →'}
+            {pending ? 'Running…' : 'Run Scenario →'}
           </button>
         </div>
       </aside>

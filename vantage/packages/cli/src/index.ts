@@ -14,9 +14,11 @@ import { simulate } from './commands/simulate.js';
 import { screener } from './commands/screener.js';
 import { board } from './commands/board.js';
 import { metaCapture, metaStatus } from './commands/meta.js';
+import { alertsList, alertsEvents, alertsTestDispatch } from './commands/alerts.js';
+import { narrativeTag } from './commands/narrative-tag.js';
 
 const program = new Command();
-program.name('vantage').description('Vantage admin & batch CLI').version('0.9.0');
+program.name('vantage').description('Vantage admin & batch CLI').version('0.10.0');
 
 /** Collector for repeatable options (e.g. --label aligned_strength --label ...). */
 const collect = (val: string, prev: string[]) => [...prev, val];
@@ -184,6 +186,40 @@ program
   .option('-u, --url <url>', 'API base URL', process.env.API_URL ?? 'http://localhost:4000')
   .action(async (opts) => {
     await metaStatus(opts);
+  });
+
+// ── alerts --------------------------------------------------------------
+const alerts = program.command('alerts').description('Inspect and test watchlist alerts (Phase 10)');
+alerts
+  .command('list')
+  .description("List a user's alert rules and recent events (direct DB)")
+  .requiredOption('--owner <userId>', 'owner user id')
+  .action(async (opts) => {
+    await alertsList({ owner: opts.owner });
+  });
+alerts
+  .command('events')
+  .description("Print a user's event feed (direct DB)")
+  .requiredOption('--owner <userId>', 'owner user id')
+  .option('--limit <n>', 'max events', '20')
+  .action(async (opts) => {
+    await alertsEvents({ owner: opts.owner, limit: opts.limit });
+  });
+alerts
+  .command('test-dispatch')
+  .description('Fire a rule end-to-end for testing (direct DB + dispatch)')
+  .requiredOption('--rule-id <id>', 'alert rule UUID')
+  .action(async (opts) => {
+    await alertsTestDispatch({ ruleId: opts.ruleId });
+  });
+
+// ── narrative-tag -------------------------------------------------------
+program
+  .command('narrative-tag')
+  .description('Run news-assisted narrative tagging for one ticker (skips the cron)')
+  .requiredOption('--ticker <symbol>', 'ticker symbol')
+  .action(async (opts) => {
+    await narrativeTag({ ticker: opts.ticker });
   });
 
 // ── health --------------------------------------------------------------

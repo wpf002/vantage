@@ -57,7 +57,7 @@ export default async function SearchPage({
   }
 
   return (
-    <div className="max-w-measure">
+    <div className="max-w-5xl">
       <header className="border-b border-ink-100 pb-10 mb-10">
         <p className="eyebrow mb-3">Search</p>
         {query ? (
@@ -75,7 +75,7 @@ export default async function SearchPage({
       {result.kind === 'name_matches' && (
         <>
           <p className="eyebrow mb-6">Matches</p>
-          <ul className="space-y-5">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-5">
             {result.matches.map((m) => (
               <li key={`${m.type}-${m.id}`}>
                 <Link href={matchHref(m) as Route} className="group block">
@@ -121,13 +121,13 @@ export default async function SearchPage({
       {result.kind === 'no_match' && (
         <>
           {query && (
-            <p className="font-serif text-deck text-ink-700 mb-10">
+            <p className="font-serif text-deck text-ink-700 mb-10 max-w-measure">
               Nothing matched &ldquo;{query}&rdquo;. Vantage currently covers the companies
               below — try one of those, or search a US ticker symbol directly.
             </p>
           )}
           <p className="eyebrow mb-6">Companies you can look up</p>
-          <ul className="space-y-5">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-5">
             {QUICK_PICKS.map((p) => (
               <li key={`${p.kind}-${p.id}`}>
                 <Link href={quickPickHref(p) as Route} className="group block">

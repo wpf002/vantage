@@ -243,8 +243,9 @@ export default async function PrivateCompany({ params }: { params: Promise<{ id:
         </div>
       </section>
 
-      <aside className="col-span-12 lg:col-span-4 lg:border-l lg:border-ink-100 lg:pl-10 space-y-8">
+      <aside className="col-span-12 lg:col-span-4 lg:border-l lg:border-ink-100 lg:pl-10 space-y-8 self-start lg:sticky lg:top-12">
         <AuditChain steps={lineage} />
+        <hr className="border-ink-100" />
         <div>
           <Link
             href={`/audit/${data.signal.id}` as Route}

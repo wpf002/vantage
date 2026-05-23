@@ -201,7 +201,7 @@ export function ScenarioTreeForm({ portfolios }: { portfolios: PortfolioOption[]
   return (
     <form onSubmit={handleSubmit} className="grid grid-cols-12 gap-x-10 gap-y-12">
       {/* ── Portfolio picker ─────────────────────────────────────────── */}
-      <section className="col-span-12 border-b border-ink-100 pb-10">
+      <section className="col-span-12 pb-6">
         <p className="eyebrow mb-4">Pick A Portfolio</p>
         <div className="divide-y divide-ink-100 border-y border-ink-100">
           {portfolios.map((p) => {

@@ -1,10 +1,13 @@
 import pino from 'pino';
 import { and, eq, isNotNull } from 'drizzle-orm';
 import { runLivePublicScore, type LivePublicScoreConfig } from '@vantage/core-public/orchestrator';
+import { getNarrativeTagsForTicker } from '@vantage/core-public/narrative-tagging';
 import { harmonize } from '@vantage/harmonizer';
 import { InsufficientDataError } from '@vantage/shared';
 import { db, schema } from '../db/client.js';
 import { ensureCompany, persistPublicScore } from './../db/signalStore.js';
+import { narrativeTagQueue } from '../queues/index.js';
+import { narrativeTagsStale } from './narrativeTag.js';
 
 /**
  * Phase 8 — daily universe re-scoring.
@@ -50,10 +53,13 @@ export async function scoreUniverse(opts: { limit?: number } = {}): Promise<Univ
 
   for (const ticker of tickers) {
     try {
+      // Phase 10 — feed news-assisted narrative tags into NIS when fresh.
+      const tags = await getNarrativeTagsForTicker(db, ticker);
       const config: LivePublicScoreConfig = {
         ticker,
         fmpApiKey: apiKey,
         ...(process.env.ML_SERVICE_URL ? { mlServiceUrl: process.env.ML_SERVICE_URL } : {}),
+        ...(tags ? { narrativeTags: tags.segments } : {}),
       };
       const run = await runLivePublicScore(config);
       const signal = harmonize(run.signal);
@@ -61,6 +67,16 @@ export async function scoreUniverse(opts: { limit?: number } = {}): Promise<Univ
       await persistPublicScore(db, { ...run, signal });
       result.scored++;
       log.info({ ticker, score: run.result.score.toFixed(1) }, 'universe score: scored');
+
+      // Re-tag if stale/missing — runs out-of-band on its own queue so the
+      // re-scoring sweep isn't blocked on Anthropic latency.
+      try {
+        if (await narrativeTagsStale(ticker)) {
+          await narrativeTagQueue.add('tag', { ticker, reason: 'cron' });
+        }
+      } catch (err) {
+        log.warn({ ticker, err: (err as Error).message }, 'universe score: enqueue narrative-tag failed');
+      }
     } catch (err) {
       if (err instanceof InsufficientDataError) {
         result.skipped++;

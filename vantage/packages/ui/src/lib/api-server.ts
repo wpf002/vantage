@@ -68,6 +68,24 @@ export async function apiServerPost<T>(path: string, body?: unknown): Promise<T>
   return resp.json() as Promise<T>;
 }
 
+export async function apiServerPatch<T>(path: string, body?: unknown): Promise<T> {
+  const ck = await cookieHeader();
+  const headers: Record<string, string> = {};
+  if (body !== undefined) headers['content-type'] = 'application/json';
+  if (ck) headers.cookie = ck;
+  const resp = await fetch(`${BASE}${path}`, {
+    method: 'PATCH',
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+    cache: 'no-store',
+  });
+  if (!resp.ok) {
+    const detail = await resp.text();
+    throw new Error(`API ${resp.status}: ${detail}`);
+  }
+  return resp.json() as Promise<T>;
+}
+
 export async function apiServerDelete<T>(path: string): Promise<T> {
   const ck = await cookieHeader();
   const resp = await fetch(`${BASE}${path}`, {

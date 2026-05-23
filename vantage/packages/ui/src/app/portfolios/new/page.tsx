@@ -67,8 +67,8 @@ export default async function NewPortfolioPage({ searchParams }: PageProps) {
         </div>
       ) : null}
 
-      <form action={buildAction} className="col-span-12 lg:col-span-8 space-y-12">
-        <div>
+      <form action={buildAction} className="col-span-12 space-y-12">
+        <div className="max-w-2xl">
           <label htmlFor="name" className="eyebrow block mb-3">
             Name
           </label>
@@ -82,27 +82,35 @@ export default async function NewPortfolioPage({ searchParams }: PageProps) {
           />
         </div>
 
-        <div>
-          <p className="eyebrow mb-3">Sleeve Targets</p>
-          <p className="font-sans text-xs text-ink-700 mb-4 leading-snug max-w-measure">
-            What share of the book each sleeve aims for. Anything left over after they sum is
-            held as cash.
-          </p>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-4 max-w-md">
-            <SleeveInput name="core" label="Core" defaultValue={50} />
-            <SleeveInput name="growth" label="Growth" defaultValue={25} />
-            <SleeveInput name="defensive" label="Defensive" defaultValue={15} />
-            <SleeveInput name="tactical" label="Tactical" defaultValue={10} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-y-12">
+          <div className="lg:pr-16">
+            <p className="eyebrow mb-3">Sleeve Targets</p>
+            <p className="font-sans text-xs text-ink-700 mb-4 leading-snug">
+              What share of the book each sleeve aims for. Anything left over after they sum is
+              held as cash.
+            </p>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+              <SleeveInput name="core" label="Core" defaultValue={50} />
+              <SleeveInput name="growth" label="Growth" defaultValue={25} />
+              <SleeveInput name="defensive" label="Defensive" defaultValue={15} />
+              <SleeveInput name="tactical" label="Tactical" defaultValue={10} />
+            </div>
+          </div>
+
+          <div className="lg:border-l lg:border-ink-100 lg:pl-16">
+            <p className="eyebrow mb-3">Risk Caps</p>
+            <p className="font-sans text-xs text-ink-700 mb-4 leading-snug">
+              Hard limits the engine never breaches — the most any single position or sector can
+              take.
+            </p>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+              <SleeveInput name="maxAssetWeight" label="Max Position" defaultValue={10} />
+              <SleeveInput name="maxSectorWeight" label="Max Sector" defaultValue={25} />
+            </div>
           </div>
         </div>
 
-        <div>
-          <p className="eyebrow mb-3">Risk Caps</p>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-4 max-w-md">
-            <SleeveInput name="maxAssetWeight" label="Max Position" defaultValue={10} />
-            <SleeveInput name="maxSectorWeight" label="Max Sector" defaultValue={25} />
-          </div>
-        </div>
+        <hr className="border-ink-100" />
 
         <button
           type="submit"

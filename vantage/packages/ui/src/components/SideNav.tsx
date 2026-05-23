@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth';
+import { apiServerGetNullable } from '@/lib/api-server';
 import { SideNavLink } from './SideNavLink';
 
 /**
@@ -10,20 +11,33 @@ import { SideNavLink } from './SideNavLink';
  * above and scrolls internally if its content overflows.
  */
 
-const NAV = [
+// Discovery tools first, then the personal pair (Watchlists + Alerts, which
+// carries an unread badge), then portfolio/analysis tools.
+const NAV_BEFORE_ALERTS = [
   { href: '/', label: 'Home' },
-  { href: '/portfolios', label: 'Portfolios' },
-  { href: '/classifications', label: 'Classifications' },
   { href: '/screener', label: 'Stock Screener' },
   { href: '/board', label: 'Daily Updates' },
+  { href: '/classifications', label: 'Classifications' },
+  { href: '/watchlists', label: 'Watchlists' },
+] as const;
+
+const NAV_AFTER_ALERTS = [
+  { href: '/portfolios', label: 'Portfolios' },
   { href: '/simulation', label: 'Simulations' },
   { href: '/audit', label: 'Audit' },
-  { href: '/meta', label: 'Meta' },
+  { href: '/meta', label: 'Track Record' },
 ] as const;
 
 export async function SideNav() {
   const session = await auth();
   const signedIn = !!session?.user?.id;
+
+  // Unread alert count for the badge — server-side, signed-in only.
+  let unread = 0;
+  if (signedIn) {
+    const res = await apiServerGetNullable<{ count: number }>('/v1/alerts/unread-count');
+    unread = res?.count ?? 0;
+  }
 
   return (
     <aside
@@ -35,7 +49,11 @@ export async function SideNav() {
         flex flex-col gap-1
       "
     >
-      {NAV.map((item) => (
+      {NAV_BEFORE_ALERTS.map((item) => (
+        <SideNavLink key={item.href} href={item.href} label={item.label} />
+      ))}
+      {signedIn ? <SideNavLink href="/alerts" label="Alerts" badge={unread} /> : null}
+      {NAV_AFTER_ALERTS.map((item) => (
         <SideNavLink key={item.href} href={item.href} label={item.label} />
       ))}
       {signedIn ? <SideNavLink href="/settings" label="Settings" /> : null}

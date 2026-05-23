@@ -107,7 +107,7 @@ export default async function PortfolioByIdPage({ params, searchParams }: PagePr
                 className="block w-full bg-transparent border-0 border-b border-ink-300 focus:border-editorial focus:outline-none font-serif text-lg py-2 px-0"
               />
             </form>
-            <div className="flex items-center gap-8 mt-4">
+            <div className="flex items-center gap-6 mt-4">
               <button
                 type="submit"
                 form="rename-form"
@@ -115,6 +115,7 @@ export default async function PortfolioByIdPage({ params, searchParams }: PagePr
               >
                 Save &rarr;
               </button>
+              <span className="h-5 w-px bg-ink-300" aria-hidden />
               <form action={deleteAction}>
                 <ConfirmSubmitButton
                   label="Delete →"

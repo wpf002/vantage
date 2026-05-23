@@ -1,0 +1,19 @@
+[
+  {
+    "name": "S&P 500 Highlights",
+    "description": "A representative cross-section of the S&P 500 — megacaps, financials, healthcare, staples, and energy.",
+    "items": [
+      "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "BRK-B", "JPM", "V", "JNJ",
+      "WMT", "PG", "XOM", "UNH", "HD", "MA", "CVX", "KO", "PEP", "COST",
+      "BAC", "ABBV", "MRK", "AVGO", "LLY"
+    ]
+  },
+  {
+    "name": "AI Frontier",
+    "description": "The names most associated with the AI buildout — chips, hyperscalers, and data infrastructure.",
+    "items": [
+      "NVDA", "AMD", "GOOGL", "MSFT", "META", "PLTR", "SNOW", "AVGO", "TSM", "MU",
+      "SMCI", "ORCL"
+    ]
+  }
+]

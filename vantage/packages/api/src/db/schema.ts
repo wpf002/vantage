@@ -44,6 +44,14 @@ export const assetClassEnum = pgEnum('asset_class', [
 export const sleeveEnum = pgEnum('sleeve', ['core', 'growth', 'defensive', 'tactical', 'none']);
 export const signalDirectionEnum = pgEnum('signal_direction', ['bullish', 'neutral', 'bearish']);
 export const portfolioKindEnum = pgEnum('portfolio_kind', ['system', 'personal', 'published']);
+// Phase 10 — watchlists & alerts.
+export const watchlistKindEnum = pgEnum('watchlist_kind', ['system', 'personal']);
+export const alertRuleTypeEnum = pgEnum('alert_rule_type', [
+  'label_change',
+  'score_move',
+  'classification_transition',
+  'morning_digest',
+]);
 
 // ── Auth tables ───────────────────────────────────────────────────────────
 //
@@ -378,3 +386,152 @@ export const publicEstimates = pgTable('public_estimates', {
   payload: jsonb('payload').notNull(),
   fetchedAt: timestamp('fetched_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+// ── Phase 10 — Watchlists, Alerts, Narrative Tags ───────────────────────────
+
+/**
+ * A per-user (or system-curated) subset of entities the user cares about.
+ * `kind='system'` rows have a null owner and are read-only for users —
+ * analogous to The Default portfolio.
+ */
+export const platformWatchlists = pgTable(
+  'platform_watchlists',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull(),
+    ownerUserId: uuid('owner_user_id').references(() => users.id, { onDelete: 'cascade' }),
+    kind: watchlistKindEnum('kind').notNull().default('personal'),
+    description: text('description'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    ownerIdx: index('platform_watchlists_owner_idx').on(t.ownerUserId),
+    kindIdx: index('platform_watchlists_kind_idx').on(t.kind),
+    // System watchlists are seeded idempotently on (kind, name) — see
+    // infra/seeds/system-watchlists.ts. Partial unique index keeps personal
+    // rows (which may share a name across users) out of the constraint.
+    systemNameIdx: uniqueIndex('platform_watchlists_system_name_idx')
+      .on(t.name)
+      .where(sql`${t.kind} = 'system'`),
+  }),
+);
+
+export const platformWatchlistItems = pgTable(
+  'platform_watchlist_items',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    watchlistId: uuid('watchlist_id')
+      .notNull()
+      .references(() => platformWatchlists.id, { onDelete: 'cascade' }),
+    entity: text('entity').notNull(), // ticker for public, companyId for private
+    addedAt: timestamp('added_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    watchlistIdx: index('platform_watchlist_items_watchlist_idx').on(t.watchlistId),
+    // No duplicate items in a single watchlist.
+    uniqItem: uniqueIndex('platform_watchlist_items_uniq').on(t.watchlistId, t.entity),
+  }),
+);
+
+/**
+ * Alert rules attached to a watchlist. config is rule-specific (see
+ * AlertRuleConfig in @vantage/shared). When triggered, fan out per `channels`.
+ */
+export const platformAlertRules = pgTable(
+  'platform_alert_rules',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    watchlistId: uuid('watchlist_id')
+      .notNull()
+      .references(() => platformWatchlists.id, { onDelete: 'cascade' }),
+    ownerUserId: uuid('owner_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    ruleType: alertRuleTypeEnum('rule_type').notNull(),
+    config: jsonb('config').notNull(),
+    active: boolean('active').notNull().default(true),
+    channels: jsonb('channels').notNull().default(sql`'{"web":true,"email":false}'::jsonb`),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    lastFiredAt: timestamp('last_fired_at', { withTimezone: true }),
+  },
+  (t) => ({
+    ownerIdx: index('platform_alert_rules_owner_idx').on(t.ownerUserId),
+    watchlistIdx: index('platform_alert_rules_watchlist_idx').on(t.watchlistId),
+    activeIdx: index('platform_alert_rules_active_idx').on(t.active),
+  }),
+);
+
+/**
+ * One row per dispatched alert. (ruleId, triggerSignalId) is the logical
+ * idempotency key — the evaluator checks before insert so a worker restart
+ * mid-process can't double-fire.
+ */
+export const platformAlertEvents = pgTable(
+  'platform_alert_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    ruleId: uuid('rule_id')
+      .notNull()
+      .references(() => platformAlertRules.id, { onDelete: 'cascade' }),
+    ownerUserId: uuid('owner_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    entity: text('entity').notNull(),
+    triggerSignalId: uuid('trigger_signal_id').references(() => platformSignals.id),
+    payload: jsonb('payload').notNull(),
+    dispatchedAt: timestamp('dispatched_at', { withTimezone: true }).notNull().defaultNow(),
+    channels: jsonb('channels').notNull(),
+    channelResults: jsonb('channel_results').notNull().default(sql`'{}'::jsonb`),
+    acknowledgedAt: timestamp('acknowledged_at', { withTimezone: true }),
+  },
+  (t) => ({
+    ownerDispatchedIdx: index('platform_alert_events_owner_dispatched_idx').on(
+      t.ownerUserId,
+      t.dispatchedAt.desc(),
+    ),
+    acknowledgedIdx: index('platform_alert_events_acknowledged_idx').on(t.acknowledgedAt),
+    // Idempotency lookup — one event per (rule, triggering signal).
+    ruleSignalIdx: index('platform_alert_events_rule_signal_idx').on(t.ruleId, t.triggerSignalId),
+  }),
+);
+
+export const platformPushSubscriptions = pgTable(
+  'platform_push_subscriptions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    endpoint: text('endpoint').notNull(),
+    keys: jsonb('keys').notNull(), // { p256dh, auth }
+    userAgent: text('user_agent'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    uniqEndpoint: uniqueIndex('platform_push_subscriptions_uniq').on(t.userId, t.endpoint),
+  }),
+);
+
+/**
+ * News-assisted narrative segment tags (Phase 10, Part 4). Written by the
+ * narrative-tag worker during universe re-scoring; read by core-public's NIS
+ * computation, which falls back to the rule-based heuristic when absent.
+ */
+export const publicNarrativeTags = pgTable(
+  'public_narrative_tags',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    ticker: text('ticker').notNull(),
+    asOf: timestamp('as_of', { withTimezone: true }).notNull(),
+    narrativeSegments: jsonb('narrative_segments').notNull(), // [{ name, confidence }]
+    rationale: text('rationale'),
+    modelVersion: text('model_version').notNull(),
+    source: text('source').notNull(), // 'news' | 'fallback'
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    tickerIdx: index('public_narrative_tags_ticker_idx').on(t.ticker),
+    uniqTickerAsOf: uniqueIndex('public_narrative_tags_ticker_asof_uniq').on(t.ticker, t.asOf),
+  }),
+);

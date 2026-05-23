@@ -68,7 +68,7 @@ export async function SimulationsSection({ portfolioId }: { portfolioId: string 
           <tbody>
             {rows.map((r) => (
               <tr key={r.id}>
-                <td className="num">{formatDate(r.runAt)}</td>
+                <td className="font-mono tabular-nums">{formatDate(r.runAt)}</td>
                 <td className="font-serif">{KIND_LABELS[r.kind] ?? r.kind}</td>
                 <td className="num">
                   {r.summary.horizonYears ? `${r.summary.horizonYears}y` : '—'}

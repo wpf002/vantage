@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Route } from 'next';
 import { apiGet } from '@/lib/api';
 import { formatDate } from '@/lib/format';
+import { RecentlyGradedTable } from './RecentlyGradedTable';
 
 /**
  * /meta — the meta-learning report card (Phase 8). Reads the graded decision
@@ -104,7 +105,7 @@ export default async function MetaPage() {
     <article className="grid grid-cols-12 gap-x-10 gap-y-8">
       <header className="col-span-12 border-b border-ink-100 pb-8">
         <h1 className="font-display text-5xl xl:text-6xl tracking-editorial leading-tight mb-4">
-          How the Calls Held Up
+          Track Record
         </h1>
         <p className="font-serif text-deck text-ink-800 max-w-measure leading-relaxed">
           Every score and classification is graded against the realized price move over a{' '}
@@ -140,36 +141,21 @@ export default async function MetaPage() {
           {/* Recent graded */}
           <div>
             <p className="eyebrow mb-4">Recently Graded</p>
-            <div className="overflow-x-auto">
-              <table className="editorial-table">
-                <thead>
-                  <tr>
-                    <th>Ticker</th>
-                    <th>Call</th>
-                    <th>Expected</th>
-                    <th className="num">Return</th>
-                    <th>Result</th>
-                    <th>Graded</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.recent.map((r, i) => (
-                    <tr key={`${r.entity}-${i}`}>
-                      <td className="font-mono text-xs text-ink-700">{r.entity}</td>
-                      <td className="font-sans text-xs uppercase tracking-wider text-ink-700">
-                        {r.label ? LABEL_DISPLAY[r.label] ?? r.label : r.assetClass ? CLASS_DISPLAY[r.assetClass] ?? r.assetClass : r.decisionType}
-                      </td>
-                      <td className="font-sans text-xs uppercase tracking-wider text-ink-500">{r.expected}</td>
-                      <td className={`num ${r.forwardReturn >= 0 ? 'text-ink-900' : 'text-editorial'}`}>{signedPct(r.forwardReturn)}</td>
-                      <td className={`font-sans text-xs uppercase tracking-wider ${r.correct ? 'text-ink-900' : 'text-editorial'}`}>
-                        {r.correct ? 'Hit' : 'Miss'}
-                      </td>
-                      <td className="font-mono text-xs text-ink-500 whitespace-nowrap">{formatDate(r.outcomeAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <RecentlyGradedTable
+              rows={data.recent.map((r) => ({
+                ticker: r.entity,
+                call: r.label
+                  ? LABEL_DISPLAY[r.label] ?? r.label
+                  : r.assetClass
+                    ? CLASS_DISPLAY[r.assetClass] ?? r.assetClass
+                    : r.decisionType,
+                expected: r.expected,
+                returnPct: signedPct(r.forwardReturn),
+                returnNegative: r.forwardReturn < 0,
+                hit: r.correct,
+                graded: formatDate(r.outcomeAt),
+              }))}
+            />
           </div>
         </section>
       )}

@@ -161,13 +161,13 @@ export default async function ClassificationsPage({
         })}
       </nav>
 
-      <section className="col-span-12 space-y-16">
+      <section className="col-span-12 space-y-12">
         {groupsToRender.map((cls) => {
           const meta = CLASS_META[cls];
           const items = grouped[cls];
           return (
             <div key={cls}>
-              <div className="border-b border-ink-100 pb-4 mb-6">
+              <div className="flex items-center min-h-[2.75rem] border-b border-ink-100 mb-6">
                 <p className="eyebrow">{meta.label}</p>
               </div>
 

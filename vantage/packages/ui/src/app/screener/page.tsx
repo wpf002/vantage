@@ -245,12 +245,13 @@ function FilterRail({ sp }: { sp: SP }) {
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-2 border-t border-ink-100">
-        <button type="submit" className="font-sans text-sm uppercase tracking-wider text-editorial hover:text-editorial-dark">
+      <div className="flex items-center gap-3 pt-4 border-t border-ink-100">
+        <button type="submit" className="font-sans text-xs uppercase tracking-wider text-editorial hover:text-editorial-dark whitespace-nowrap">
           Apply Filters →
         </button>
-        <Link href={'/screener' as Route} className="font-sans text-xs uppercase tracking-wider text-ink-500 hover:text-editorial">
-          Clear All
+        <span className="h-4 w-px bg-ink-300" aria-hidden />
+        <Link href={'/screener' as Route} className="font-sans text-xs uppercase tracking-wider text-editorial hover:text-editorial-dark whitespace-nowrap">
+          Clear All →
         </Link>
       </div>
     </form>
@@ -282,8 +283,8 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
     : null;
 
   return (
-    <article className="grid grid-cols-12 gap-x-10 gap-y-8">
-      <header className="col-span-12 border-b border-ink-100 pb-8">
+    <article className="flex flex-col h-full">
+      <header className="border-b border-ink-100 pb-8 mb-8">
         <h1 className="font-display text-5xl xl:text-6xl tracking-editorial leading-tight mb-4">
           Browse Every Read
         </h1>
@@ -293,7 +294,7 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
       </header>
 
       {/* Mobile filter toggle */}
-      <div className="col-span-12 lg:hidden">
+      <div className="lg:hidden mb-8">
         <details className="border border-ink-100 bg-cream-50 px-4 py-3">
           <summary className="eyebrow cursor-pointer">Filters</summary>
           <div className="mt-5">
@@ -302,20 +303,21 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
         </details>
       </div>
 
-      {/* Desktop filter rail */}
-      <aside className="hidden lg:block lg:col-span-3 xl:col-span-2">
-        <FilterRail sp={sp} />
-      </aside>
+      <div className="grid grid-cols-12 gap-x-10 flex-1 min-h-0">
+        {/* Desktop filter rail */}
+        <aside className="hidden lg:block lg:col-span-3 lg:border-r lg:border-ink-100 lg:pr-8 self-start">
+          <FilterRail sp={sp} />
+        </aside>
 
-      <section className="col-span-12 lg:col-span-9 xl:col-span-10 min-w-0">
+        <section className="col-span-12 lg:col-span-9 min-w-0 flex flex-col min-h-0">
         {results.length === 0 ? (
           <p className="font-serif italic text-ink-500 text-lg py-12">
             No tickers match these filters. Loosen them up.
           </p>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="editorial-table">
+            <div className="overflow-auto flex-1 min-h-0">
+              <table className="editorial-table h-full [&_td]:align-middle">
                 <thead>
                   <tr>
                     {SORT_COLUMNS.map((col) => {
@@ -394,7 +396,8 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
             </div>
           </>
         )}
-      </section>
+        </section>
+      </div>
     </article>
   );
 }

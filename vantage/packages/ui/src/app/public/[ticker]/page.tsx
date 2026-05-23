@@ -171,15 +171,17 @@ function buildRead(
 }
 
 /** Source line for the data the run was built on. */
-function buildProvenance(name: string, prov: Provenance): string {
+function provenanceFacts(name: string, prov: Provenance): Array<{ label: string; value: string }> {
   const epsDir = prov.epsSurprisePct >= 0 ? 'above' : 'below';
   const revDir = prov.revenueSurprisePct >= 0 ? 'above' : 'below';
   const move = (r: number): string => (r >= 0 ? `+${pctAbs(r)}` : `−${pctAbs(r)}`);
-  return (
-    `Source: ${name} earnings report, ${longDate(prov.earningsDate)}. ` +
-    `EPS ${pctAbs(prov.epsSurprisePct)} ${epsDir} consensus, revenue ${pctAbs(prov.revenueSurprisePct)} ${revDir}. ` +
-    `Share-price reaction: ${move(prov.oneDayReturn)} (1d), ${move(prov.threeDayReturn)} (3d).`
-  );
+  return [
+    { label: 'Source', value: `${name} earnings report` },
+    { label: 'Reported', value: longDate(prov.earningsDate) },
+    { label: 'EPS vs. Consensus', value: `${pctAbs(prov.epsSurprisePct)} ${epsDir}` },
+    { label: 'Revenue vs. Consensus', value: `${pctAbs(prov.revenueSurprisePct)} ${revDir}` },
+    { label: 'Price Reaction', value: `${move(prov.oneDayReturn)} (1d) · ${move(prov.threeDayReturn)} (3d)` },
+  ];
 }
 
 async function fetchLatest(ticker: string): Promise<LatestPublicScoreResponse | null> {
@@ -323,14 +325,24 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
 
         {provenance && (
           <div>
-            <p className="eyebrow mb-2">Data Sources</p>
-            <p className="font-serif text-base text-ink-800 max-w-measure leading-relaxed mb-6">
-              {buildProvenance(name, provenance)}
-            </p>
+            <p className="eyebrow mb-4">Where This Comes From</p>
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-4 mb-8 border-t border-ink-100 pt-5">
+              {provenanceFacts(name, provenance).map((f) => (
+                <div
+                  key={f.label}
+                  className={`flex items-baseline justify-between gap-4 border-b border-ink-100 pb-2 ${
+                    f.label === 'Source' ? 'sm:col-span-2' : ''
+                  }`}
+                >
+                  <dt className="font-sans text-xs uppercase tracking-wider text-ink-500">{f.label}</dt>
+                  <dd className="font-serif text-ink-900 text-right whitespace-nowrap">{f.value}</dd>
+                </div>
+              ))}
+            </dl>
 
             {segments.length > 0 && (
               <>
-                <p className="eyebrow mb-3">Revenue mix</p>
+                <p className="eyebrow mb-3">Revenue Mix</p>
                 <table className="editorial-table">
                   <thead>
                     <tr>
@@ -386,6 +398,7 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
             Every input and transform step behind this score.
           </p>
         </div>
+        <hr className="border-ink-100" />
         <div>
           <Link
             href={`/public/${ticker}/history` as Route}
