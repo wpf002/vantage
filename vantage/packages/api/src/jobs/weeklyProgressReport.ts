@@ -60,8 +60,8 @@ export interface WeeklyMetrics {
 export async function computeWeeklyMetrics(): Promise<WeeklyMetrics> {
   const windowEnd = new Date();
   const windowStart = new Date(windowEnd.getTime() - WEEK_MS);
-  // postgres.js (via drizzle's raw `db.execute`) doesn't auto-serialize Date
-  // objects the way `.where(sql\`\`)` does — pass an ISO string instead.
+  // postgres.js (via drizzle's sql template) rejects raw Date objects in
+  // parameter binding — pass an ISO string and cast in SQL.
   const windowStartIso = windowStart.toISOString();
 
   // ── Coverage ───────────────────────────────────────────────────────────
@@ -74,14 +74,14 @@ export async function computeWeeklyMetrics(): Promise<WeeklyMetrics> {
     .select({ n: sql<number>`count(*)::int` })
     .from(schema.platformCompanies)
     .where(
-      sql`${schema.platformCompanies.marketType} = 'public' AND ${schema.platformCompanies.createdAt} >= ${windowStart}`,
+      sql`${schema.platformCompanies.marketType} = 'public' AND ${schema.platformCompanies.createdAt} >= ${windowStartIso}::timestamptz`,
     );
 
   // Distinct tickers with a public_score row inside the window.
   const [fresh] = await db
     .select({ n: sql<number>`count(distinct ${schema.publicScores.ticker})::int` })
     .from(schema.publicScores)
-    .where(sql`${schema.publicScores.asOf} >= ${windowStart}`);
+    .where(sql`${schema.publicScores.asOf} >= ${windowStartIso}::timestamptz`);
 
   const universeSize = univ?.n ?? 0;
   const scoredFresh = fresh?.n ?? 0;
@@ -181,7 +181,7 @@ export async function computeWeeklyMetrics(): Promise<WeeklyMetrics> {
   const [sweep] = await db
     .select({ n: sql<number>`count(distinct date_trunc('day', ${schema.publicScores.asOf}))::int` })
     .from(schema.publicScores)
-    .where(sql`${schema.publicScores.asOf} >= ${windowStart}`);
+    .where(sql`${schema.publicScores.asOf} >= ${windowStartIso}::timestamptz`);
 
   // Meta-learning: count graded classification decisions in-window and the
   // hit rate. `outcome_payload->>'hit' = 'true'` is the convention from
@@ -198,7 +198,7 @@ export async function computeWeeklyMetrics(): Promise<WeeklyMetrics> {
     .where(
       sql`${schema.platformDecisions.decisionType} = 'classification'
           AND ${schema.platformDecisions.outcomeAt} IS NOT NULL
-          AND ${schema.platformDecisions.outcomeAt} >= ${windowStart}`,
+          AND ${schema.platformDecisions.outcomeAt} >= ${windowStartIso}::timestamptz`,
     );
 
   const decisionsGraded = graded?.total ?? 0;
