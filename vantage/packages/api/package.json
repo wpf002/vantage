@@ -21,7 +21,8 @@
     "db:seed": "tsx --env-file=../../.env src/db/seed.ts",
     "db:studio": "drizzle-kit studio",
     "classify:backfill": "tsx --env-file=../../.env src/scripts/backfill-classifications.ts",
-    "load:universe": "tsx --env-file=../../.env src/scripts/load-universe.ts"
+    "load:universe": "tsx --env-file=../../.env src/scripts/load-universe.ts",
+    "progress:send-now": "tsx --env-file=../../.env src/scripts/send-progress-report.ts"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.0",
