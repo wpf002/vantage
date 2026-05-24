@@ -60,6 +60,9 @@ export interface WeeklyMetrics {
 export async function computeWeeklyMetrics(): Promise<WeeklyMetrics> {
   const windowEnd = new Date();
   const windowStart = new Date(windowEnd.getTime() - WEEK_MS);
+  // postgres.js (via drizzle's raw `db.execute`) doesn't auto-serialize Date
+  // objects the way `.where(sql\`\`)` does — pass an ISO string instead.
+  const windowStartIso = windowStart.toISOString();
 
   // ── Coverage ───────────────────────────────────────────────────────────
   const [univ] = await db
@@ -102,7 +105,7 @@ export async function computeWeeklyMetrics(): Promise<WeeklyMetrics> {
         label,
         as_of,
         ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY as_of DESC) AS rn,
-        (as_of >= ${windowStart}) AS in_window
+        (as_of >= ${windowStartIso}::timestamptz) AS in_window
       FROM public_scores
     ),
     latest_in AS (
@@ -115,7 +118,7 @@ export async function computeWeeklyMetrics(): Promise<WeeklyMetrics> {
       FROM (
         SELECT ticker, score, ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY as_of DESC) AS pr
         FROM public_scores
-        WHERE as_of < ${windowStart}
+        WHERE as_of < ${windowStartIso}::timestamptz
       ) prev
       WHERE pr = 1
     )
@@ -156,7 +159,7 @@ export async function computeWeeklyMetrics(): Promise<WeeklyMetrics> {
         SELECT ticker, label FROM (
           SELECT ticker, label, ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY as_of DESC) AS pr
           FROM public_scores
-          WHERE as_of < ${windowStart}
+          WHERE as_of < ${windowStartIso}::timestamptz
         ) p WHERE pr = 1
       )
       SELECT li.ticker, li.score
