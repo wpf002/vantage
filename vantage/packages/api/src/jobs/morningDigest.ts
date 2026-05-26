@@ -344,7 +344,7 @@ export function renderMorningEmailHtml(m: MorningMetrics): string {
   const labelBlock = (title: string, entries: LabelEntry[]): string => {
     if (entries.length === 0) return '';
     return `<div style="margin:24px 0 12px 0;">${eyebrow(title, { color: '#15161A', size: 10 })}</div>${entries
-      .map((e) => tickerRow({ ticker: e.ticker, right: `score ${e.score.toFixed(0)}` }))
+      .map((e) => tickerRow({ ticker: e.ticker, right: `Score: ${e.score.toFixed(0)}` }))
       .join('')}`;
   };
 
@@ -396,22 +396,22 @@ export function renderMorningEmailHtml(m: MorningMetrics): string {
       <!-- Lede -->
       <tr><td style="padding:36px 48px 8px 48px;">
         ${eyebrow('The engine, overnight')}
-        <h1 style="font-family:${F_DISPLAY};font-size:34px;font-weight:400;margin:10px 0 16px 0;letter-spacing:-0.015em;line-height:1.1;color:#15161A;">What the engine learned overnight</h1>
+        <h1 style="font-family:${F_DISPLAY};font-size:34px;font-weight:400;margin:10px 0 16px 0;letter-spacing:-0.015em;line-height:1.1;color:#15161A;">What The Engine Learned Overnight</h1>
         <p style="font-family:${F_SERIF};font-size:17px;line-height:1.55;color:#2A2C32;margin:0;">${escapeHtml(lede)}</p>
       </td></tr>
 
       <!-- What got smarter -->
       <tr><td style="padding:32px 48px 0 48px;">
-        ${sectionHeading('What got smarter')}
+        ${sectionHeading('What Got Smarter')}
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #9DA1A8;">
           ${metricRow('Decisions matured (24h)', m.decisionsMatured24h.toLocaleString())}
-          ${metricRow('Hit rate (rolling 30d)', m.rollingHitRatePct === null ? 'not enough graded' : `${fmtPct(m.rollingHitRatePct, 1)} of ${m.rollingDecisionsGraded.toLocaleString()}`)}
+          ${metricRow('Hit rate (rolling 30d)', m.rollingHitRatePct === null ? 'NOT ENOUGH GRADED' : `${fmtPct(m.rollingHitRatePct, 1)} of ${m.rollingDecisionsGraded.toLocaleString()}`)}
         </table>
       </td></tr>
 
       <!-- What it learned about -->
       <tr><td style="padding:32px 48px 0 48px;">
-        ${sectionHeading('What it learned about')}
+        ${sectionHeading('What It Learned About')}
         <div style="margin:0 0 12px 0;">${eyebrow('Biggest score moves', { color: '#15161A', size: 10 })}</div>
         ${moversBlock}
         ${labelBlock('New Aligned Strength', m.newAlignedStrength)}
@@ -420,9 +420,9 @@ export function renderMorningEmailHtml(m: MorningMetrics): string {
 
       <!-- What got broader -->
       <tr><td style="padding:32px 48px 0 48px;">
-        ${sectionHeading('What got broader')}
+        ${sectionHeading('What Got Broader')}
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #9DA1A8;">
-          ${metricRow('Universe', `${m.universeSize.toLocaleString()} public tickers`)}
+          ${metricRow('Universe', `${m.universeSize.toLocaleString()} Public Tickers`)}
           ${metricRow('Added (24h)', m.added24h.toLocaleString())}
           ${metricRow('Scored fresh (24h)', `${m.scoredFresh24h.toLocaleString()} · ${fmtPct(coveragePct, 1)}`)}
           ${metricRow('Narrative tags refreshed (24h)', m.narrativeTagsRefreshed24h.toLocaleString())}
@@ -431,11 +431,11 @@ export function renderMorningEmailHtml(m: MorningMetrics): string {
 
       <!-- Convictions -->
       <tr><td style="padding:32px 48px 0 48px;">
-        ${convictionBlock('Top current convictions', m.topConvictions)}
+        ${convictionBlock('Top Current Convictions', m.topConvictions)}
       </td></tr>
       ${
         m.bottomConvictions.length
-          ? `<tr><td style="padding:24px 48px 0 48px;">${convictionBlock('Watching for breakdowns', m.bottomConvictions)}</td></tr>`
+          ? `<tr><td style="padding:24px 48px 0 48px;">${convictionBlock('Watching For Breakdowns', m.bottomConvictions)}</td></tr>`
           : ''
       }
 
