@@ -78,6 +78,12 @@ export async function loadUniverse(opts: LoadUniverseOpts = {}): Promise<LoadUni
         })
         .onConflictDoUpdate({
           target: schema.platformCompanies.ticker,
+          // The unique index on (ticker) is partial — WHERE ticker IS NOT NULL —
+          // because private rows share this table and have null tickers. Postgres
+          // requires the inferenced predicate to match exactly, or it can't pick
+          // the index and ON CONFLICT throws "no unique or exclusion constraint
+          // matching the ON CONFLICT specification".
+          targetWhere: sql`ticker IS NOT NULL`,
           set: {
             name: row.name,
             sector: row.sector,
