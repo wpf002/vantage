@@ -41,6 +41,7 @@ import { loadUniverse } from '../jobs/loadUniverse.js';
 import { sendWeeklyProgressReport } from '../jobs/weeklyProgressReport.js';
 import { HARMONIZED_SIGNAL_CHANNEL, startAlertEvaluator, stopAlertEvaluator } from '../workers/alerts.js';
 import { runMorningDigest } from '../jobs/morningDigest.js';
+import { ensureAdminMorningDigestRule } from '../jobs/ensureAdminDigestRule.js';
 import { tagNarrativeForTicker } from '../jobs/narrativeTag.js';
 
 /**
@@ -406,6 +407,7 @@ export function startWorkers(): void {
   void ensureUniverseLoadSchedule();
   void ensureWeeklyProgressReportSchedule();
   void ensureMorningDigestSchedule();
+  void ensureAdminMorningDigestRule();
 
   log.info('workers started');
 }

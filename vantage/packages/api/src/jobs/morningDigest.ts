@@ -56,13 +56,16 @@ interface Digest {
   breakdowns: DigestMover[];
 }
 
+// Override via env once coverage is wide enough to want a stricter floor.
+const MIN_DIGEST_TICKERS = Number(process.env.MORNING_DIGEST_MIN_TICKERS ?? 1);
+
 /** Build a compact Morning Read for the most recent qualifying scored day. */
 async function buildDigest(): Promise<Digest | null> {
   const resolved = (await db.execute(sql`
     SELECT to_char(as_of::date, 'YYYY-MM-DD') AS d
     FROM public_scores
     GROUP BY as_of::date
-    HAVING count(*) >= 5
+    HAVING count(*) >= ${MIN_DIGEST_TICKERS}
     ORDER BY as_of::date DESC
     LIMIT 1
   `)) as unknown as Array<{ d: string }>;
