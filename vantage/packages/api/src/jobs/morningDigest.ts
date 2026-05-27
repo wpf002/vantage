@@ -291,17 +291,17 @@ const fmtSigned = (n: number): string => `${n >= 0 ? '+' : ''}${n.toFixed(1)}`;
 function eyebrow(s: string, opts: { color?: string; size?: number } = {}): string {
   const color = opts.color ?? '#7B7F89';
   const size = opts.size ?? 11;
-  return `<div style="font-family:${F_SANS};text-transform:uppercase;letter-spacing:0.12em;font-size:${size}px;color:${color};font-weight:500;">${escapeHtml(s)}</div>`;
+  return `<div class="v-eyebrow" style="font-family:${F_SANS};text-transform:uppercase;letter-spacing:0.12em;font-size:${size}px;color:${color};font-weight:500;">${escapeHtml(s)}</div>`;
 }
 
 function sectionHeading(s: string): string {
-  return `<h2 style="font-family:${F_DISPLAY};font-size:20px;font-weight:400;margin:0 0 16px 0;letter-spacing:-0.015em;color:#15161A;line-height:1.25;">${escapeHtml(s)}</h2>`;
+  return `<h2 class="v-section-h2" style="font-family:${F_DISPLAY};font-size:20px;font-weight:400;margin:0 0 16px 0;letter-spacing:-0.015em;color:#15161A;line-height:1.25;">${escapeHtml(s)}</h2>`;
 }
 
 function metricRow(label: string, value: string): string {
   return `<tr>
-    <td style="padding:11px 16px 11px 0;font-family:${F_SANS};font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7B7F89;border-bottom:1px solid #EAE4D8;font-weight:500;">${escapeHtml(label)}</td>
-    <td align="right" style="padding:11px 0 11px 16px;font-family:${F_MONO};font-size:14px;color:#15161A;border-bottom:1px solid #EAE4D8;font-variant-numeric:tabular-nums;white-space:nowrap;">${escapeHtml(value)}</td>
+    <td class="v-metric-label" style="padding:11px 16px 11px 0;font-family:${F_SANS};font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#7B7F89;border-bottom:1px solid #EAE4D8;font-weight:500;">${escapeHtml(label)}</td>
+    <td align="right" class="v-metric-value" style="padding:11px 0 11px 16px;font-family:${F_MONO};font-size:14px;color:#15161A;border-bottom:1px solid #EAE4D8;font-variant-numeric:tabular-nums;white-space:nowrap;">${escapeHtml(value)}</td>
   </tr>`;
 }
 
@@ -311,14 +311,14 @@ function metricRow(label: string, value: string): string {
 // sub-line spans both columns on its own row.
 function tickerRow(t: { ticker: string; right: string; sub?: string }): string {
   const subRow = t.sub
-    ? `<tr><td colspan="2" style="padding:3px 0 0 0;font-family:${F_SERIF};font-size:12px;color:#7B7F89;font-style:italic;letter-spacing:0;">${escapeHtml(t.sub)}</td></tr>`
+    ? `<tr><td colspan="2" class="v-ticker-sub" style="padding:3px 0 0 0;font-family:${F_SERIF};font-size:12px;color:#7B7F89;font-style:italic;letter-spacing:0;">${escapeHtml(t.sub)}</td></tr>`
     : '';
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 14px 0;border-collapse:collapse;">
     <tr>
-      <td style="font-family:${F_MONO};font-size:13px;padding:0;vertical-align:baseline;letter-spacing:0.04em;">
+      <td class="v-ticker" style="font-family:${F_MONO};font-size:13px;padding:0;vertical-align:baseline;letter-spacing:0.04em;">
         <a href="${UI_BASE}/public/${encodeURIComponent(t.ticker)}" style="color:#A8201A;text-decoration:none;">${escapeHtml(t.ticker)}</a>
       </td>
-      <td align="right" style="font-family:${F_MONO};font-size:13px;color:#15161A;padding:0;vertical-align:baseline;white-space:nowrap;font-variant-numeric:tabular-nums;">${escapeHtml(t.right)}</td>
+      <td align="right" class="v-ticker" style="font-family:${F_MONO};font-size:13px;color:#15161A;padding:0;vertical-align:baseline;white-space:nowrap;font-variant-numeric:tabular-nums;">${escapeHtml(t.right)}</td>
     </tr>
     ${subRow}
   </table>`;
@@ -327,6 +327,31 @@ function tickerRow(t: { ticker: string; right: string; sub?: string }): string {
 function emptyNote(s: string): string {
   return `<p style="margin:0 0 18px 0;color:#7B7F89;font-style:italic;font-family:${F_SERIF};font-size:14px;line-height:1.55;">${escapeHtml(s)}</p>`;
 }
+
+// Mobile-only overrides. Inline styles still drive desktop; these only kick
+// in below 600px (phones). Without them the 48px inner padding eats screens
+// and uppercase tracked labels wrap onto two rows.
+const MOBILE_STYLES = `
+  @media only screen and (max-width: 600px) {
+    .v-outer { padding: 24px 0 !important; }
+    .v-card { width: 100% !important; max-width: 100% !important; }
+    .v-pad-masthead { padding: 28px 20px 8px 20px !important; }
+    .v-pad-lede { padding: 28px 20px 8px 20px !important; }
+    .v-pad-section { padding: 28px 20px 28px 20px !important; }
+    .v-pad-conviction { padding: 28px 20px 28px 20px !important; }
+    .v-pad-footer { padding: 28px 20px 32px 20px !important; }
+    .v-lede-h1 { font-size: 26px !important; line-height: 1.15 !important; }
+    .v-section-h2 { font-size: 18px !important; margin-bottom: 14px !important; }
+    .v-lede-p { font-size: 15px !important; }
+    .v-eyebrow { font-size: 10px !important; letter-spacing: 0.08em !important; }
+    .v-metric-label { font-size: 9px !important; letter-spacing: 0.06em !important; padding-right: 8px !important; }
+    .v-metric-value { font-size: 12px !important; padding-left: 8px !important; }
+    .v-masthead-name { font-size: 18px !important; }
+    .v-masthead-meta { font-size: 9px !important; letter-spacing: 0.06em !important; }
+    .v-ticker { font-size: 12px !important; }
+    .v-ticker-sub { font-size: 11px !important; }
+  }
+`;
 
 export function renderMorningEmailHtml(m: MorningMetrics): string {
   const moversBlock = m.topMovers.length
@@ -377,31 +402,32 @@ export function renderMorningEmailHtml(m: MorningMetrics): string {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Vantage Morning Read · ${m.asOf}</title>
+<style>${MOBILE_STYLES}</style>
 </head>
 <body style="margin:0;padding:0;background:#F5F2EC;font-family:${F_SERIF};color:#15161A;-webkit-font-smoothing:antialiased;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F5F2EC;padding:48px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="v-outer" style="background:#F5F2EC;padding:48px 16px;">
   <tr><td align="center">
-    <table role="presentation" width="620" cellpadding="0" cellspacing="0" style="max-width:620px;background:#FBFAF7;border:1px solid #9DA1A8;">
+    <table role="presentation" width="620" cellpadding="0" cellspacing="0" class="v-card" style="max-width:620px;width:100%;background:#FBFAF7;border:1px solid #9DA1A8;">
 
       <!-- Masthead -->
-      <tr><td style="padding:40px 48px 8px 48px;border-bottom:1px solid #9DA1A8;">
+      <tr><td class="v-pad-masthead" style="padding:40px 48px 8px 48px;border-bottom:1px solid #9DA1A8;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
           <tr>
-            <td style="font-family:${F_DISPLAY};font-size:22px;font-weight:400;letter-spacing:-0.01em;color:#15161A;">Vantage</td>
-            <td align="right" style="font-family:${F_MONO};font-size:11px;color:#7B7F89;letter-spacing:0.08em;text-transform:uppercase;">Morning Read · ${escapeHtml(m.asOf)}</td>
+            <td class="v-masthead-name" style="font-family:${F_DISPLAY};font-size:22px;font-weight:400;letter-spacing:-0.01em;color:#15161A;">Vantage</td>
+            <td align="right" class="v-masthead-meta" style="font-family:${F_MONO};font-size:11px;color:#7B7F89;letter-spacing:0.08em;text-transform:uppercase;white-space:nowrap;">Morning Read · ${escapeHtml(m.asOf)}</td>
           </tr>
         </table>
       </td></tr>
 
       <!-- Lede -->
-      <tr><td style="padding:36px 48px 8px 48px;">
+      <tr><td class="v-pad-lede" style="padding:36px 48px 8px 48px;">
         ${eyebrow('The engine, overnight')}
-        <h1 style="font-family:${F_DISPLAY};font-size:34px;font-weight:400;margin:10px 0 16px 0;letter-spacing:-0.015em;line-height:1.1;color:#15161A;">What The Engine Learned Overnight</h1>
-        <p style="font-family:${F_SERIF};font-size:17px;line-height:1.55;color:#2A2C32;margin:0;">${escapeHtml(lede)}</p>
+        <h1 class="v-lede-h1" style="font-family:${F_DISPLAY};font-size:34px;font-weight:400;margin:10px 0 16px 0;letter-spacing:-0.015em;line-height:1.1;color:#15161A;white-space:nowrap;">Engine Update</h1>
+        <p class="v-lede-p" style="font-family:${F_SERIF};font-size:17px;line-height:1.55;color:#2A2C32;margin:0;">${escapeHtml(lede)}</p>
       </td></tr>
 
       <!-- What got smarter -->
-      <tr><td style="padding:32px 48px 0 48px;">
+      <tr><td class="v-pad-section" style="padding:32px 48px 32px 48px;border-top:1px solid #9DA1A8;">
         ${sectionHeading('What Got Smarter')}
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #9DA1A8;">
           ${metricRow('Decisions matured (24h)', m.decisionsMatured24h.toLocaleString())}
@@ -410,7 +436,7 @@ export function renderMorningEmailHtml(m: MorningMetrics): string {
       </td></tr>
 
       <!-- What it learned about -->
-      <tr><td style="padding:32px 48px 0 48px;">
+      <tr><td class="v-pad-section" style="padding:32px 48px 32px 48px;border-top:1px solid #9DA1A8;">
         ${sectionHeading('What It Learned About')}
         <div style="margin:0 0 12px 0;">${eyebrow('Biggest score moves', { color: '#15161A', size: 10 })}</div>
         ${moversBlock}
@@ -419,7 +445,7 @@ export function renderMorningEmailHtml(m: MorningMetrics): string {
       </td></tr>
 
       <!-- What got broader -->
-      <tr><td style="padding:32px 48px 0 48px;">
+      <tr><td class="v-pad-section" style="padding:32px 48px 32px 48px;border-top:1px solid #9DA1A8;">
         ${sectionHeading('What Got Broader')}
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #9DA1A8;">
           ${metricRow('Universe', `${m.universeSize.toLocaleString()} Public Tickers`)}
@@ -430,17 +456,17 @@ export function renderMorningEmailHtml(m: MorningMetrics): string {
       </td></tr>
 
       <!-- Convictions -->
-      <tr><td style="padding:32px 48px 0 48px;">
+      <tr><td class="v-pad-section" style="padding:32px 48px 32px 48px;border-top:1px solid #9DA1A8;">
         ${convictionBlock('Top Current Convictions', m.topConvictions)}
       </td></tr>
       ${
         m.bottomConvictions.length
-          ? `<tr><td style="padding:24px 48px 0 48px;">${convictionBlock('Watching For Breakdowns', m.bottomConvictions)}</td></tr>`
+          ? `<tr><td class="v-pad-conviction" style="padding:32px 48px 32px 48px;border-top:1px solid #9DA1A8;">${convictionBlock('Watching For Breakdowns', m.bottomConvictions)}</td></tr>`
           : ''
       }
 
       <!-- Colophon -->
-      <tr><td style="padding:36px 48px 40px 48px;border-top:1px solid #9DA1A8;margin-top:36px;">
+      <tr><td class="v-pad-footer" style="padding:36px 48px 40px 48px;border-top:1px solid #9DA1A8;margin-top:36px;">
         <p style="margin:24px 0 0 0;font-family:${F_SERIF};font-style:italic;font-size:13px;color:#7B7F89;line-height:1.55;">
           A daily account of how the engine is learning and growing. Reply to this email if anything looks off.
         </p>

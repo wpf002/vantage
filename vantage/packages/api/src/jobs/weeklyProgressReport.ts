@@ -229,8 +229,8 @@ const fmtSignedScore = (n: number): string =>
 
 function row(label: string, value: string): string {
   return `<tr>
-    <td style="padding:8px 16px 8px 0;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#888;">${label}</td>
-    <td style="padding:8px 0;font-family:'IBM Plex Mono',monospace;color:#111;text-align:right;">${value}</td>
+    <td class="v-metric-label" style="padding:8px 16px 8px 0;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#888;white-space:nowrap;">${label}</td>
+    <td class="v-metric-value" style="padding:8px 0;font-family:'IBM Plex Mono',monospace;color:#111;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;">${value}</td>
   </tr>`;
 }
 
@@ -246,9 +246,23 @@ function tickerListBlock(title: string, items: { ticker: string; right: string }
       </li>`,
     )
     .join('');
-  return `<p style="margin:0 0 8px 0;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#111;">${title}</p>
+  return `<p class="v-eyebrow" style="margin:0 0 8px 0;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#111;">${title}</p>
     <ul style="margin:0 0 20px 0;padding:0;list-style:none;">${rows}</ul>`;
 }
+
+const MOBILE_STYLES = `
+  @media only screen and (max-width: 600px) {
+    .v-outer { padding: 24px 0 !important; }
+    .v-card { width: 100% !important; max-width: 100% !important; padding: 28px 20px !important; }
+    .v-h1 { font-size: 26px !important; line-height: 1.15 !important; }
+    .v-h2 { font-size: 16px !important; }
+    .v-eyebrow { font-size: 10px !important; letter-spacing: 0.06em !important; }
+    .v-period { font-size: 10px !important; }
+    .v-metric-label { font-size: 10px !important; letter-spacing: 0.06em !important; padding-right: 8px !important; }
+    .v-metric-value { font-size: 12px !important; }
+    .v-section { margin-bottom: 24px !important; }
+  }
+`;
 
 export function renderProgressEmailHtml(m: WeeklyMetrics): string {
   const period = `${m.windowStart.toISOString().slice(0, 10)} → ${m.windowEnd.toISOString().slice(0, 10)}`;
@@ -267,29 +281,30 @@ export function renderProgressEmailHtml(m: WeeklyMetrics): string {
   }));
 
   return `<!doctype html>
-<html><body style="margin:0;background:#f4f1ea;font-family:'Source Serif 4',Georgia,serif;color:#111;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ea;padding:40px 0;">
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${MOBILE_STYLES}</style></head>
+<body style="margin:0;background:#f4f1ea;font-family:'Source Serif 4',Georgia,serif;color:#111;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="v-outer" style="background:#f4f1ea;padding:40px 0;">
   <tr><td align="center">
-    <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="background:#fbf9f4;padding:48px 56px;max-width:640px;">
+    <table role="presentation" width="640" cellpadding="0" cellspacing="0" class="v-card" style="background:#fbf9f4;padding:48px 56px;max-width:640px;width:100%;">
       <tr><td>
-        <p style="margin:0;font-family:'Playfair Display',Georgia,serif;font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:#111;">Vantage · Weekly Progress</p>
-        <h1 style="margin:6px 0 4px 0;font-family:'Playfair Display',Georgia,serif;font-size:32px;line-height:1.1;color:#111;">How Vantage grew this week</h1>
-        <p style="margin:0 0 32px 0;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#888;">${period}</p>
+        <p class="v-eyebrow" style="margin:0;font-family:'Playfair Display',Georgia,serif;font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:#111;">Vantage · Weekly Progress</p>
+        <h1 class="v-h1" style="margin:6px 0 4px 0;font-family:'Playfair Display',Georgia,serif;font-size:32px;line-height:1.1;color:#111;white-space:nowrap;">Weekly Progress</h1>
+        <p class="v-period" style="margin:0 0 32px 0;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#888;">${period}</p>
 
-        <h2 style="margin:0 0 8px 0;font-family:'Playfair Display',Georgia,serif;font-size:18px;color:#111;">Coverage</h2>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #ddd;border-bottom:1px solid #ddd;margin-bottom:28px;">
+        <h2 class="v-h2" style="margin:0 0 8px 0;font-family:'Playfair Display',Georgia,serif;font-size:18px;color:#111;">Coverage</h2>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="v-section" style="border-top:1px solid #ddd;border-bottom:1px solid #ddd;margin-bottom:28px;">
           ${row('Universe', `${m.universeSize.toLocaleString()} tickers`)}
           ${row('Added this week', m.addedThisWeek.toLocaleString())}
           ${row('Scored fresh', `${m.scoredFresh.toLocaleString()} (${fmtPct(m.coveragePct)})`)}
         </table>
 
-        <h2 style="margin:0 0 8px 0;font-family:'Playfair Display',Georgia,serif;font-size:18px;color:#111;">Signal Highlights</h2>
+        <h2 class="v-h2" style="margin:0 0 8px 0;font-family:'Playfair Display',Georgia,serif;font-size:18px;color:#111;">Signal Highlights</h2>
         ${tickerListBlock('Top score moves', movers)}
         ${tickerListBlock('New Aligned Strength', asEntries)}
         ${tickerListBlock('New Narrative Breakdown', nbEntries)}
 
-        <h2 style="margin:0 0 8px 0;font-family:'Playfair Display',Georgia,serif;font-size:18px;color:#111;">Engine Quality</h2>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #ddd;border-bottom:1px solid #ddd;margin-bottom:28px;">
+        <h2 class="v-h2" style="margin:0 0 8px 0;font-family:'Playfair Display',Georgia,serif;font-size:18px;color:#111;">Engine Quality</h2>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="v-section" style="border-top:1px solid #ddd;border-bottom:1px solid #ddd;margin-bottom:28px;">
           ${row('Sweep days', `${m.sweepCount} / 7`)}
           ${row('Decisions graded', m.decisionsGraded.toLocaleString())}
           ${row('Hit rate', m.hitRatePct === null ? 'n/a (not enough graded)' : fmtPct(m.hitRatePct, 1))}

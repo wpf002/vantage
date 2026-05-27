@@ -134,17 +134,29 @@ export function alertEmailHtml(input: {
   when: string;
   tearSheetUrl: string;
 }): string {
-  return `<!doctype html><html><body style="margin:0;background:#F5F2EC;padding:40px 0;font-family:Georgia,'Times New Roman',serif;color:#15161A;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
-    <table role="presentation" width="520" cellpadding="0" cellspacing="0" style="background:#FBFAF7;border:1px solid #B6B9C1;">
-      <tr><td style="padding:32px 40px 24px;">
-        <div style="font-family:Inter,Helvetica,Arial,sans-serif;text-transform:uppercase;letter-spacing:0.12em;font-size:11px;color:#A8201A;">Vantage Alert</div>
-        <h1 style="font-size:26px;margin:14px 0 6px;letter-spacing:-0.015em;">${escapeHtml(input.entityName)}</h1>
-        <p style="font-size:17px;line-height:1.5;color:#2A2C32;margin:8px 0 4px;">${escapeHtml(input.whatChanged)}</p>
+  const mobileStyles = `
+    @media only screen and (max-width: 600px) {
+      .v-outer { padding: 24px 0 !important; }
+      .v-card { width: 100% !important; max-width: 100% !important; }
+      .v-pad-body { padding: 28px 20px 20px !important; }
+      .v-pad-foot { padding: 16px 20px 24px !important; }
+      .v-eyebrow { font-size: 10px !important; letter-spacing: 0.08em !important; }
+      .v-h1 { font-size: 22px !important; }
+      .v-body { font-size: 16px !important; }
+    }
+  `;
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${mobileStyles}</style></head>
+<body style="margin:0;background:#F5F2EC;font-family:Georgia,'Times New Roman',serif;color:#15161A;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="v-outer" style="background:#F5F2EC;padding:40px 16px;"><tr><td align="center">
+    <table role="presentation" width="520" cellpadding="0" cellspacing="0" class="v-card" style="max-width:520px;width:100%;background:#FBFAF7;border:1px solid #B6B9C1;">
+      <tr><td class="v-pad-body" style="padding:32px 40px 24px;">
+        <div class="v-eyebrow" style="font-family:Inter,Helvetica,Arial,sans-serif;text-transform:uppercase;letter-spacing:0.12em;font-size:11px;color:#A8201A;">Vantage Alert</div>
+        <h1 class="v-h1" style="font-size:26px;margin:14px 0 6px;letter-spacing:-0.015em;">${escapeHtml(input.entityName)}</h1>
+        <p class="v-body" style="font-size:17px;line-height:1.5;color:#2A2C32;margin:8px 0 4px;">${escapeHtml(input.whatChanged)}</p>
         <p style="font-family:'Courier New',monospace;font-size:12px;color:#7B7F89;margin:0 0 28px;">${escapeHtml(input.when)}</p>
         <a href="${input.tearSheetUrl}" style="font-family:Inter,Helvetica,Arial,sans-serif;text-transform:uppercase;letter-spacing:0.06em;font-size:13px;color:#A8201A;text-decoration:none;border-bottom:2px solid #A8201A;padding-bottom:2px;">View on Vantage →</a>
       </td></tr>
-      <tr><td style="padding:18px 40px 28px;border-top:1px solid #EAE4D8;">
+      <tr><td class="v-pad-foot" style="padding:18px 40px 28px;border-top:1px solid #EAE4D8;">
         <a href="${eventsFeedUrl()}" style="font-family:Inter,Helvetica,Arial,sans-serif;font-size:12px;color:#7B7F89;text-decoration:none;">See all activity →</a>
       </td></tr>
     </table>
