@@ -31,7 +31,9 @@ export interface UniverseScoreResult {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export async function scoreUniverse(opts: { limit?: number } = {}): Promise<UniverseScoreResult> {
+export async function scoreUniverse(
+  opts: { limit?: number; skipScored?: boolean } = {},
+): Promise<UniverseScoreResult> {
   const apiKey = process.env.FMP_API_KEY;
   if (!apiKey) throw new Error('FMP_API_KEY not set — cannot re-score universe');
 
@@ -46,6 +48,20 @@ export async function scoreUniverse(opts: { limit?: number } = {}): Promise<Univ
     );
 
   let tickers = rows.map((r) => r.ticker).filter((t): t is string => !!t);
+
+  // Resume mode: skip tickers that already have a persisted score so a killed
+  // sweep can be relaunched without redoing completed work. The daily cron
+  // leaves this off — it re-scores everything to keep the decision log fresh.
+  if (opts.skipScored) {
+    const scored = await db
+      .selectDistinct({ ticker: schema.publicScores.ticker })
+      .from(schema.publicScores);
+    const done = new Set(scored.map((r) => r.ticker));
+    const before = tickers.length;
+    tickers = tickers.filter((t) => !done.has(t));
+    log.info({ alreadyScored: done.size, remaining: tickers.length, total: before }, 'universe score: resume — skipping scored');
+  }
+
   if (opts.limit) tickers = tickers.slice(0, opts.limit);
 
   const result: UniverseScoreResult = { scanned: tickers.length, scored: 0, skipped: 0, failed: 0 };

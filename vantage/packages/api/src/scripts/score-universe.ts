@@ -13,6 +13,10 @@ import { closeQueues } from '../queues/index.js';
  * or with overrides:
  *   LIMIT=50 pnpm --filter @vantage/api score:universe
  *   UNIVERSE_SCORE_DELAY_MS=1000 pnpm --filter @vantage/api score:universe
+ *   RESUME=1 pnpm --filter @vantage/api score:universe   # skip already-scored
+ *
+ * RESUME=1 skips tickers that already have a persisted score, so a sweep that
+ * was killed partway can be relaunched without redoing completed work.
  *
  * Heads-up: a full ~3,000-ticker pass takes ~2 hours and makes ~9 FMP calls
  * per ticker (~27k total). Verify your FMP plan's daily quota before running
@@ -21,12 +25,16 @@ import { closeQueues } from '../queues/index.js';
 
 async function main(): Promise<void> {
   const limit = process.env.LIMIT ? Number(process.env.LIMIT) : undefined;
+  const resume = process.env.RESUME === '1' || process.env.RESUME === 'true';
 
   process.stderr.write(
-    `Scoring public universe (limit=${limit ?? 'none — full universe'})…\n`,
+    `Scoring public universe (limit=${limit ?? 'none — full universe'}, resume=${resume})…\n`,
   );
 
-  const result = await scoreUniverse({ ...(limit ? { limit } : {}) });
+  const result = await scoreUniverse({
+    ...(limit ? { limit } : {}),
+    ...(resume ? { skipScored: true } : {}),
+  });
   process.stderr.write(
     `Done. scanned=${result.scanned} scored=${result.scored} skipped=${result.skipped} failed=${result.failed}\n`,
   );
