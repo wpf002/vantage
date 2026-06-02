@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.vantage.universe-score</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/willfoti/Documents/GitHub/vantage/vantage/scripts/score-launchd.sh</string>
+    </array>
+
+    <!-- Start at login/load. -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Restart only if it exited non-zero (killed/crashed). A clean finish
+         (exit 0, e.g. already-done guard) is left alone, so it won't loop. -->
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+
+    <!-- Be a well-behaved background job. -->
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>LowPriorityIO</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/score-launchd.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/score-launchd.err.log</string>
+</dict>
+</plist>
