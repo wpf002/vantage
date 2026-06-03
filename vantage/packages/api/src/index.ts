@@ -60,6 +60,24 @@ async function buildServer() {
   // cookie. Never rejects — protected routes opt in by checking request.user.
   await registerSessionMiddleware(app);
 
+  // Root — a friendly 200 so the bare domain isn't a confusing 404. This is an
+  // API service (no UI at root); point callers at the real endpoints.
+  app.get('/', async () => ({
+    service: 'vantage-api',
+    status: 'ok',
+    docs: 'JSON API — see endpoints below',
+    endpoints: {
+      health: '/health',
+      search: '/v1/search?q=',
+      screener: '/v1/screener',
+      public: '/v1/public',
+      private: '/v1/private',
+      portfolios: '/v1/portfolios',
+      watchlists: '/v1/watchlists',
+      alerts: '/v1/alerts',
+    },
+  }));
+
   // Routes
   await app.register(healthRoutes, { prefix: '/health' });
   await app.register(privateRoutes, { prefix: '/v1/private' });
