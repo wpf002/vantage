@@ -3,6 +3,7 @@ import {
   PUBLIC_SCORE_WEIGHTS,
   ENGINE_VERSIONS,
   type Signal,
+  type PublicScoreWeights,
 } from '@vantage/shared';
 import { computeEgs, EgsInputs, type EgsResult } from './egs/index.js';
 import { computeNis, NisInputs, type NisResult } from './nis/index.js';
@@ -43,16 +44,19 @@ export const PublicScoreResult = z.object({
 });
 export type PublicScoreResult = z.infer<typeof PublicScoreResult>;
 
-export function computePublicScore(input: PublicScoreInputs): PublicScoreResult {
+export function computePublicScore(
+  input: PublicScoreInputs,
+  weights: PublicScoreWeights = PUBLIC_SCORE_WEIGHTS,
+): PublicScoreResult {
   const v = PublicScoreInputs.parse(input);
   const egs = computeEgs(v.egs);
   const nis = computeNis(v.nis);
   const nhs = computeNhs(v.nhs);
 
   const score =
-    PUBLIC_SCORE_WEIGHTS.expectationGap * egs.score +
-    PUBLIC_SCORE_WEIGHTS.narrativeIntegrityInverse * (100 - nis.score) +
-    PUBLIC_SCORE_WEIGHTS.narrativeHeat * nhs.score;
+    weights.expectationGap * egs.score +
+    weights.narrativeIntegrityInverse * (100 - nis.score) +
+    weights.narrativeHeat * nhs.score;
 
   const label: PublicLabel = classifyLabel({
     publicScore: score,
@@ -88,7 +92,10 @@ export function computePublicScore(input: PublicScoreInputs): PublicScoreResult 
   };
 }
 
-export function publicScoreToSignal(r: PublicScoreResult): Signal {
+export function publicScoreToSignal(
+  r: PublicScoreResult,
+  weights: PublicScoreWeights = PUBLIC_SCORE_WEIGHTS,
+): Signal {
   const egs = r.components.egs as EgsResult;
   const nis = r.components.nis as NisResult;
   const nhs = r.components.nhs as NhsResult;
@@ -105,21 +112,21 @@ export function publicScoreToSignal(r: PublicScoreResult): Signal {
         op: 'public.egs',
         inputs: {},
         output: egs,
-        weight: PUBLIC_SCORE_WEIGHTS.expectationGap,
+        weight: weights.expectationGap,
         ts: r.asOf,
       },
       {
         op: 'public.nis',
         inputs: {},
         output: nis,
-        weight: PUBLIC_SCORE_WEIGHTS.narrativeIntegrityInverse,
+        weight: weights.narrativeIntegrityInverse,
         ts: r.asOf,
       },
       {
         op: 'public.nhs',
         inputs: {},
         output: nhs,
-        weight: PUBLIC_SCORE_WEIGHTS.narrativeHeat,
+        weight: weights.narrativeHeat,
         ts: r.asOf,
       },
     ],

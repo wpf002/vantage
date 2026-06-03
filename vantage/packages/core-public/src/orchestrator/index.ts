@@ -1,5 +1,5 @@
 import { InsufficientDataError } from '@vantage/shared';
-import type { Signal } from '@vantage/shared';
+import type { Signal, PublicScoreWeights } from '@vantage/shared';
 import { FmpClient, fetchAllPublicData } from '@vantage/data-ingest/public';
 import type { PublicDataBundle, FmpEarning } from '@vantage/data-ingest/public';
 import { computePublicScore, publicScoreToSignal, type PublicScoreResult } from '../score.js';
@@ -34,6 +34,13 @@ export interface LivePublicScoreConfig {
    * heuristic. The LLM only *identifies* the segment; the NIS math is unchanged.
    */
   narrativeTags?: Array<{ name: string; confidence: number }>;
+  /**
+   * Learned blend weights from the nightly calibration loop. When supplied (by
+   * the API caller via getActiveScoringWeights) the scorer uses these instead of
+   * the static defaults — this is the write-back half of the closed learning
+   * loop. Omitted → cold-start constants.
+   */
+  weights?: PublicScoreWeights;
 }
 
 export interface LivePublicScoreResult {
@@ -387,17 +394,20 @@ export async function runLivePublicScore(
   const epsSurprise = egs.egsInputs.epsSurprisePct;
   const surpriseSign = epsSurprise > 0.01 ? 1 : epsSurprise < -0.01 ? -1 : 0;
 
-  const result = computePublicScore({
-    ticker,
-    surpriseSign,
-    egs: egs.egsInputs,
-    nis: nis.nisInputs,
-    nhs: nhsInputs,
-  });
+  const result = computePublicScore(
+    {
+      ticker,
+      surpriseSign,
+      egs: egs.egsInputs,
+      nis: nis.nisInputs,
+      nhs: nhsInputs,
+    },
+    config.weights,
+  );
 
   const label = result.label as PublicLabel;
   const meta = PublicLabelMeta[label];
-  const baseSignal = publicScoreToSignal(result);
+  const baseSignal = publicScoreToSignal(result, config.weights);
   const signal: Signal = {
     ...baseSignal,
     metadata: {

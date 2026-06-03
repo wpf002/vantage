@@ -26,6 +26,17 @@ export const PUBLIC_SCORE_WEIGHTS = {
 } as const;
 
 /**
+ * Shape of the Public Score blend weights. The constants above are the static
+ * defaults / cold-start values; the nightly calibration loop learns new weights
+ * from graded outcomes and the scorer accepts them via this type.
+ */
+export type PublicScoreWeights = {
+  expectationGap: number;
+  narrativeIntegrityInverse: number;
+  narrativeHeat: number;
+};
+
+/**
  * Default per-stage weights for the private blend. Tunable per company.
  * Order: [DCF, Comps, LBO]. ML adjusts on top of the blend.
  */

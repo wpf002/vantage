@@ -7,6 +7,7 @@ import { ValidationError, type Signal } from '@vantage/shared';
 import { db, schema } from '../db/client.js';
 import { persistClassification, persistSignal } from '../db/signalStore.js';
 import {
+  CALIBRATE_WEIGHTS_QUEUE_NAME,
   CLASSIFICATION_QUEUE_NAME,
   HARMONIZE_QUEUE_NAME,
   META_OUTCOME_QUEUE_NAME,
@@ -18,12 +19,14 @@ import {
   UNIVERSE_SCORE_QUEUE_NAME,
   classificationQueue,
   connection,
+  ensureCalibrateWeightsSchedule,
   ensureMetaOutcomeSchedule,
   ensureMorningDigestSchedule,
   ensureSystemPortfolioSchedule,
   ensureUniverseLoadSchedule,
   ensureUniverseScoreSchedule,
   ensureWeeklyProgressReportSchedule,
+  type CalibrateWeightsJob,
   type ClassificationJob,
   type HarmonizeJob,
   type MetaOutcomeJob,
@@ -36,6 +39,7 @@ import {
 } from './index.js';
 import { rebuildSystemPortfolio } from '../jobs/systemPortfolio.js';
 import { captureOutcomes } from '../jobs/outcomeCapture.js';
+import { calibrateWeights } from '../jobs/calibrateWeights.js';
 import { scoreUniverse } from '../jobs/universeScore.js';
 import { loadUniverse } from '../jobs/loadUniverse.js';
 import { sendWeeklyProgressReport } from '../jobs/weeklyProgressReport.js';
@@ -252,6 +256,12 @@ async function handleMetaOutcome(job: Job<MetaOutcomeJob>): Promise<void> {
   log.info(res, 'meta outcome: done');
 }
 
+async function handleCalibrateWeights(job: Job<CalibrateWeightsJob>): Promise<void> {
+  log.info({ jobId: job.id, reason: job.data.reason }, 'calibrate weights: start');
+  const res = await calibrateWeights();
+  log.info(res, 'calibrate weights: done');
+}
+
 async function handleUniverseScore(job: Job<UniverseScoreJob>): Promise<void> {
   log.info({ jobId: job.id, reason: job.data.reason }, 'universe score: start');
   const res = await scoreUniverse({ limit: job.data.limit });
@@ -331,6 +341,16 @@ export function startWorkers(): void {
   });
   metaOutcomeWorker.on('ready', () => log.info('meta outcome worker ready'));
 
+  const calibrateWeightsWorker = new Worker<CalibrateWeightsJob>(
+    CALIBRATE_WEIGHTS_QUEUE_NAME,
+    handleCalibrateWeights,
+    { connection, concurrency: 1 },
+  );
+  calibrateWeightsWorker.on('failed', (job, err) => {
+    log.error({ jobId: job?.id, err: err.message }, 'calibrate weights: failed');
+  });
+  calibrateWeightsWorker.on('ready', () => log.info('calibrate weights worker ready'));
+
   const universeScoreWorker = new Worker<UniverseScoreJob>(
     UNIVERSE_SCORE_QUEUE_NAME,
     handleUniverseScore,
@@ -388,6 +408,7 @@ export function startWorkers(): void {
     classificationWorker,
     systemPortfolioWorker,
     metaOutcomeWorker,
+    calibrateWeightsWorker,
     universeScoreWorker,
     universeLoadWorker,
     progressReportWorker,
@@ -403,6 +424,7 @@ export function startWorkers(): void {
   // inside the ensure* helpers.
   void ensureSystemPortfolioSchedule();
   void ensureMetaOutcomeSchedule();
+  void ensureCalibrateWeightsSchedule();
   void ensureUniverseScoreSchedule();
   void ensureUniverseLoadSchedule();
   void ensureWeeklyProgressReportSchedule();

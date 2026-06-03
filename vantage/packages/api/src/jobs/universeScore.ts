@@ -5,6 +5,7 @@ import { getNarrativeTagsForTicker } from '@vantage/core-public/narrative-taggin
 import { harmonize } from '@vantage/harmonizer';
 import { InsufficientDataError } from '@vantage/shared';
 import { db, schema } from '../db/client.js';
+import { getActiveScoringWeights } from '../db/scoringWeights.js';
 import { ensureCompany, persistPublicScore } from './../db/signalStore.js';
 import { narrativeTagQueue } from '../queues/index.js';
 import { narrativeTagsStale } from './narrativeTag.js';
@@ -68,8 +69,13 @@ export async function scoreUniverse(
 
   if (opts.limit) tickers = tickers.slice(0, opts.limit);
 
+  // Learned blend weights from the nightly calibration loop — fetched once per
+  // sweep so every ticker is scored with the same active weight set. Falls back
+  // to static defaults inside the scorer when none have been calibrated yet.
+  const weights = await getActiveScoringWeights();
+
   const result: UniverseScoreResult = { scanned: tickers.length, scored: 0, skipped: 0, failed: 0 };
-  log.info({ count: tickers.length }, 'universe score: start');
+  log.info({ count: tickers.length, learnedWeights: weights ?? 'defaults' }, 'universe score: start');
 
   for (const ticker of tickers) {
     try {
@@ -80,6 +86,7 @@ export async function scoreUniverse(
         fmpApiKey: apiKey,
         ...(process.env.ML_SERVICE_URL ? { mlServiceUrl: process.env.ML_SERVICE_URL } : {}),
         ...(tags ? { narrativeTags: tags.segments } : {}),
+        ...(weights ? { weights } : {}),
       };
       const run = await runLivePublicScore(config);
       const signal = harmonize(run.signal);

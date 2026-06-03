@@ -20,6 +20,9 @@ export const SYSTEM_PORTFOLIO_QUEUE_NAME = 'vantage.system.portfolio';
 // Phase 8 — meta-learning outcome capture: grades matured decisions against
 // realized forward price moves.
 export const META_OUTCOME_QUEUE_NAME = 'vantage.meta.outcome';
+// Phase 8+ — the learning step: re-weights the Public Score components from
+// graded outcomes (runs nightly after outcome capture). Closes the loop.
+export const CALIBRATE_WEIGHTS_QUEUE_NAME = 'vantage.meta.calibrate';
 // Phase 8 — daily universe re-scoring: keeps fresh decisions landing so the
 // decision log (and therefore meta-learning) grows without manual input.
 export const UNIVERSE_SCORE_QUEUE_NAME = 'vantage.universe.score';
@@ -59,6 +62,10 @@ export interface UniverseScoreJob {
   reason: 'cron' | 'manual';
   /** Optional cap on how many tickers to score this run. */
   limit?: number;
+}
+
+export interface CalibrateWeightsJob {
+  reason: 'cron' | 'manual';
 }
 
 export interface UniverseLoadJob {
@@ -129,6 +136,11 @@ export const universeScoreQueue = new Queue<UniverseScoreJob>(UNIVERSE_SCORE_QUE
   defaultJobOptions,
 });
 
+export const calibrateWeightsQueue = new Queue<CalibrateWeightsJob>(
+  CALIBRATE_WEIGHTS_QUEUE_NAME,
+  { connection, defaultJobOptions },
+);
+
 export const universeLoadQueue = new Queue<UniverseLoadJob>(UNIVERSE_LOAD_QUEUE_NAME, {
   connection,
   defaultJobOptions,
@@ -193,6 +205,27 @@ export async function ensureMetaOutcomeSchedule(): Promise<void> {
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('[queues] failed to register meta outcome cron', err);
+  }
+}
+
+/**
+ * Schedule the nightly weight-calibration step. Default 04:00 UTC — runs after
+ * outcome capture (03:00) so it learns from the freshest grades. This is the
+ * write-back half of the learning loop: it re-weights the Public Score
+ * components from graded outcomes. No-ops (logs and leaves weights unchanged)
+ * until enough graded outcomes accumulate.
+ */
+export async function ensureCalibrateWeightsSchedule(): Promise<void> {
+  const pattern = process.env.CALIBRATE_WEIGHTS_CRON || '0 4 * * *';
+  try {
+    await calibrateWeightsQueue.upsertJobScheduler(
+      'calibrate-weights-nightly',
+      { pattern, tz: 'UTC' },
+      { name: 'calibrate', data: { reason: 'cron' } },
+    );
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[queues] failed to register calibrate weights cron', err);
   }
 }
 
@@ -282,6 +315,7 @@ export async function closeQueues(): Promise<void> {
     classificationQueue.close(),
     systemPortfolioQueue.close(),
     metaOutcomeQueue.close(),
+    calibrateWeightsQueue.close(),
     universeScoreQueue.close(),
     universeLoadQueue.close(),
     progressReportQueue.close(),

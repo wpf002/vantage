@@ -8,6 +8,7 @@ import { harmonize } from '@vantage/harmonizer';
 import { InsufficientDataError, NotFoundError, ValidationError } from '@vantage/shared';
 import { db, schema } from '../db/client.js';
 import { ensureCompany, persistPublicScore } from '../db/signalStore.js';
+import { getActiveScoringWeights } from '../db/scoringWeights.js';
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -49,10 +50,12 @@ export const publicRoutes: FastifyPluginAsyncZod = async (app) => {
     { schema: { body: ScoreLiveRequest } },
     async (req, reply) => {
       const ticker = req.body.ticker.toUpperCase();
+      const weights = await getActiveScoringWeights();
       const config: LivePublicScoreConfig = {
         ticker,
         fmpApiKey: requireEnv('FMP_API_KEY'),
         ...(process.env.ML_SERVICE_URL ? { mlServiceUrl: process.env.ML_SERVICE_URL } : {}),
+        ...(weights ? { weights } : {}),
       };
 
       let result;

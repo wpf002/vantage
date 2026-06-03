@@ -371,6 +371,24 @@ export const publicNhs = pgTable('public_nhs', {
   asOf: timestamp('as_of', { withTimezone: true }).notNull(),
 });
 
+/**
+ * Learned Public Score blend weights — the write-back target of the nightly
+ * calibration loop. Append-only: the most recent row (by as_of) is the active
+ * weight set the scorer reads. Cold-start defaults live in shared/constants.ts
+ * (PUBLIC_SCORE_WEIGHTS); the first calibrated row supersedes them. metadata
+ * records per-component correlations and prior weights for auditability.
+ */
+export const scoringWeights = pgTable('scoring_weights', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  asOf: timestamp('as_of', { withTimezone: true }).notNull().defaultNow(),
+  egsWeight: real('egs_weight').notNull(),
+  nisWeight: real('nis_weight').notNull(),
+  nhsWeight: real('nhs_weight').notNull(),
+  sampleSize: integer('sample_size').notNull(),
+  method: text('method').notNull(),
+  metadata: jsonb('metadata'),
+});
+
 export const publicSegments = pgTable('public_segments', {
   id: uuid('id').primaryKey().defaultRandom(),
   ticker: text('ticker').notNull(),

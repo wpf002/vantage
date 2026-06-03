@@ -43,6 +43,13 @@
       "when": 1779476183324,
       "tag": "0005_freezing_the_captain",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1780514808826,
+      "tag": "0006_youthful_thunderbolt_ross",
+      "breakpoints": true
     }
   ]
 }

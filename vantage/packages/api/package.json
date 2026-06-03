@@ -23,6 +23,7 @@
     "classify:backfill": "tsx --env-file=../../.env src/scripts/backfill-classifications.ts",
     "load:universe": "tsx --env-file=../../.env src/scripts/load-universe.ts",
     "score:universe": "tsx --env-file=../../.env src/scripts/score-universe.ts",
+    "calibrate:weights": "tsx --env-file=../../.env src/scripts/calibrate-weights.ts",
     "progress:send-now": "tsx --env-file=../../.env src/scripts/send-progress-report.ts",
     "digest:send-now": "tsx --env-file=../../.env src/scripts/send-digest-now.ts"
   },
