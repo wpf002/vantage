@@ -23,8 +23,10 @@ export interface FmpConfig {
 export const FmpProfile = z.object({
   symbol: z.string(),
   companyName: z.string(),
-  sector: z.string().optional(),
-  industry: z.string().optional(),
+  // FMP returns null sector/industry for shells/SPACs — tolerate it (.optional()
+  // alone rejects an explicit null) so these tickers parse instead of erroring.
+  sector: z.string().nullable().optional(),
+  industry: z.string().nullable().optional(),
   marketCap: z.number().optional(),
   beta: z.number().optional(),
   price: z.number().optional(),

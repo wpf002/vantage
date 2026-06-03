@@ -26,14 +26,18 @@ import { closeQueues } from '../queues/index.js';
 async function main(): Promise<void> {
   const limit = process.env.LIMIT ? Number(process.env.LIMIT) : undefined;
   const resume = process.env.RESUME === '1' || process.env.RESUME === 'true';
+  const tickers = process.env.TICKERS
+    ? process.env.TICKERS.split(',').map((t) => t.trim().toUpperCase()).filter(Boolean)
+    : undefined;
 
   process.stderr.write(
-    `Scoring public universe (limit=${limit ?? 'none — full universe'}, resume=${resume})…\n`,
+    `Scoring public universe (limit=${limit ?? 'none — full universe'}, resume=${resume}, tickers=${tickers?.join(',') ?? 'all'})…\n`,
   );
 
   const result = await scoreUniverse({
     ...(limit ? { limit } : {}),
     ...(resume ? { skipScored: true } : {}),
+    ...(tickers ? { tickers } : {}),
   });
   process.stderr.write(
     `Done. scanned=${result.scanned} scored=${result.scored} skipped=${result.skipped} failed=${result.failed}\n`,
