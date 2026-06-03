@@ -37,6 +37,10 @@ COPY packages/portfolio    packages/portfolio
 COPY packages/shared       packages/shared
 COPY packages/simulation   packages/simulation
 COPY infra/migrations      infra/migrations
+# Runtime reads these at request time (e.g. private peer sets in
+# routes/private.ts via ../../infra/seeds). Without them, private valuations
+# 404 with "peer set not found".
+COPY infra/seeds           infra/seeds
 
 # turbo respects dependsOn so this builds shared/core/etc. first, then api.
 RUN pnpm --filter "@vantage/api" build
