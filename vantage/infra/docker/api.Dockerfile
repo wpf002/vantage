@@ -62,4 +62,4 @@ COPY --from=builder /app /app
 WORKDIR /app/packages/api
 # Railway injects PORT; index.ts honors it via process.env.PORT.
 # Run migrations on each boot so a fresh Postgres is brought up to current schema.
-CMD ["sh", "-c", "node dist/db/migrate.js && node dist/index.js"]
+CMD ["sh", "-c", "node dist/db/migrate.js && node dist/db/ensure-private-companies.js && node dist/index.js"]
