@@ -239,7 +239,7 @@ export async function ensureCompany(db: DB, profile: FmpProfile) {
       name: profile.companyName,
       marketType: 'public',
       ticker: profile.symbol,
-      sector: mapSectorString(profile.sector),
+      sector: mapSectorString(profile.sector ?? undefined),
       lifeStage: 'public_mature',
       country: 'US',
       metadata,
