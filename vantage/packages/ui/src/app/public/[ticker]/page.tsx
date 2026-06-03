@@ -282,7 +282,7 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
         <FreshnessIndicator ticker={ticker} asOf={data.signal.timestamp} />
       </header>
 
-      <section className="col-span-12 lg:col-span-8 space-y-12">
+      <section className="col-span-12 lg:col-span-8 space-y-12 lg:border-r lg:border-ink-100 lg:pr-10">
         <SignalLabel
           label={labelDisplay}
           readPlain={labelDescription}
@@ -385,7 +385,7 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
         )}
       </section>
 
-      <aside className="col-span-12 lg:col-span-4 lg:border-l lg:border-ink-100 lg:pl-10 space-y-8 lg:sticky lg:top-8 lg:self-start">
+      <aside className="col-span-12 lg:col-span-4 space-y-8 lg:sticky lg:top-8 lg:self-start">
         <AuditChain steps={lineage} />
         <div>
           <Link
