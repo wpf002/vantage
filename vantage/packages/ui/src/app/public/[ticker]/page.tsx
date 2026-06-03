@@ -385,7 +385,7 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
         )}
       </section>
 
-      <aside className="col-span-12 lg:col-span-4 lg:border-l lg:border-ink-100 lg:pl-10 space-y-8">
+      <aside className="col-span-12 lg:col-span-4 lg:border-l lg:border-ink-100 lg:pl-10 space-y-8 lg:sticky lg:top-8 lg:self-start">
         <AuditChain steps={lineage} />
         <div>
           <Link
@@ -407,7 +407,7 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
             See Score History &rarr;
           </Link>
           <p className="font-serif italic text-xs text-ink-500 mt-2">
-            The Public Score and its components over the trailing 24 months.
+            The Public Score and its components over time, logged daily.
           </p>
         </div>
       </aside>

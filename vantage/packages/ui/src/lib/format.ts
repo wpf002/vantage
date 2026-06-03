@@ -1,3 +1,8 @@
+/** Format an integer/number with thousands separators: 13886 → "13,886". */
+export function formatNumber(n: number): string {
+  return n.toLocaleString('en-US');
+}
+
 /**
  * Format a date as MM/DD/YY. Accepts an ISO string (date or full timestamp),
  * a date-ish string, or a Date. Date-only strings are formatted verbatim to

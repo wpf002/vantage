@@ -92,7 +92,10 @@ export default async function HistoryPage({
           {name} — Score History
         </h1>
         <p className="font-serif text-deck text-ink-800 max-w-measure leading-relaxed">
-          Public Score and its three components over the trailing 24 months. Click any point to see the underlying audit chain.
+          Public Score and its three components over the selected window
+          {series.length > 0 ? ` — ${series.length} read${series.length === 1 ? '' : 's'} so far` : ''}.
+          A new read is logged each day, so history fills in over time. Click any point to see the
+          underlying audit chain.
         </p>
       </header>
 

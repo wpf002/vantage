@@ -57,9 +57,18 @@ const TRACES: Array<{ key: keyof HistoryPoint; name: string; color: string; widt
   { key: 'nhs', name: 'NHS', color: INK_300, width: 1 },
 ];
 
-/** "2026-03-14" → "2026" for axis ticks at year boundaries. */
-function yearTick(iso: string): string {
-  return iso.slice(0, 4);
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/**
+ * Adaptive axis tick. Year-only ticks read as "2026 2026 2026" when the data
+ * only spans days — so scale the granularity to the actual span: day/month
+ * for short windows, year for multi-year history.
+ */
+function fmtTick(iso: string, spanDays: number): string {
+  const [y, m, d] = iso.slice(0, 10).split('-');
+  if (spanDays <= 45) return `${Number(m)}/${Number(d)}`;
+  if (spanDays <= 800) return `${MON[Number(m) - 1]} '${y!.slice(2)}`;
+  return y!;
 }
 
 interface TooltipProps {
@@ -104,6 +113,15 @@ function ChartTooltip({ active, payload, label }: TooltipProps) {
 export function ScoreHistoryChart({ data }: { data: HistoryPoint[] }) {
   const router = useRouter();
 
+  // Span of the actual data (not the requested range) drives tick granularity
+  // and whether to show point dots — a 3-point series needs visible markers.
+  const spanDays =
+    data.length > 1
+      ? (new Date(data[data.length - 1]!.asOf).getTime() - new Date(data[0]!.asOf).getTime()) /
+        86_400_000
+      : 0;
+  const sparse = data.length <= 14;
+
   return (
     <div className="w-full h-[420px]">
       <ResponsiveContainer width="100%" height="100%">
@@ -122,7 +140,7 @@ export function ScoreHistoryChart({ data }: { data: HistoryPoint[] }) {
             tickLine={false}
             axisLine={{ stroke: INK_900, strokeWidth: 1 }}
             tick={{ fontFamily: 'var(--font-mono)', fontSize: 11, fill: INK_500 }}
-            tickFormatter={yearTick}
+            tickFormatter={(v: string) => fmtTick(v, spanDays)}
             minTickGap={48}
           />
           <YAxis
@@ -153,7 +171,7 @@ export function ScoreHistoryChart({ data }: { data: HistoryPoint[] }) {
               name={t.name}
               stroke={t.color}
               strokeWidth={t.width}
-              dot={false}
+              dot={sparse ? { r: 2.5, fill: t.color, stroke: t.color } : false}
               activeDot={{ r: 3, fill: t.color, stroke: t.color, cursor: 'pointer' }}
               connectNulls
               isAnimationActive={false}

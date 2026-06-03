@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { Route } from 'next';
 import { apiGet } from '@/lib/api';
-import { formatDate } from '@/lib/format';
+import { formatDate, formatNumber } from '@/lib/format';
 import { RecentlyGradedTable } from './RecentlyGradedTable';
 
 /**
@@ -117,7 +117,7 @@ export default async function MetaPage() {
         <section className="col-span-12">
           <p className="font-serif italic text-ink-500 text-lg py-8 max-w-measure leading-relaxed">
             No graded outcomes yet
-            {data ? ` — ${data.totals.pending} decision${data.totals.pending === 1 ? '' : 's'} still maturing` : ''}.
+            {data ? ` — ${formatNumber(data.totals.pending)} decision${data.totals.pending === 1 ? '' : 's'} still maturing` : ''}.
             Outcomes are written once a decision is older than the {data?.horizonDays ?? 30}-day horizon, then
             calibration fills in here.
           </p>
@@ -126,8 +126,8 @@ export default async function MetaPage() {
         <section className="col-span-12 space-y-12">
           {/* Totals */}
           <div className="flex flex-wrap gap-x-16 gap-y-6">
-            <Stat label="Graded" value={String(data.totals.graded)} />
-            <Stat label="Pending" value={String(data.totals.pending)} />
+            <Stat label="Graded" value={formatNumber(data.totals.graded)} />
+            <Stat label="Pending" value={formatNumber(data.totals.pending)} />
             <Stat label="Overall Hit Rate" value={pct(data.totals.overallHitRate)} />
             <Stat
               label="Score Return"
