@@ -2,9 +2,11 @@ import { z } from 'zod';
 import {
   AssetClass,
   AssetClassMeta,
+  CLASSIFICATION_THRESHOLDS,
   ENGINE_VERSIONS,
   type Signal,
   type AssetClass as AssetClassT,
+  type ClassificationThresholds,
 } from '@vantage/shared';
 
 /**
@@ -84,7 +86,10 @@ function aggregate(signals: Signal[]): Aggregates {
   return agg;
 }
 
-export function classify(ctx: ClassificationContext): ClassificationResult {
+export function classify(
+  ctx: ClassificationContext,
+  thresholds: ClassificationThresholds = CLASSIFICATION_THRESHOLDS,
+): ClassificationResult {
   const agg = aggregate(ctx.signals);
   const netBull = agg.bullishCount - agg.bearishCount;
 
@@ -92,7 +97,7 @@ export function classify(ctx: ClassificationContext): ClassificationResult {
   let rationale: string;
 
   // AVOID — bearish dominance or very low confidence
-  if (netBull < 0 || agg.avgConfidence < 0.3) {
+  if (netBull < 0 || agg.avgConfidence < thresholds.avoidConfidenceFloor) {
     classification = 'AVOID';
     rationale =
       netBull < 0
@@ -106,7 +111,7 @@ export function classify(ctx: ClassificationContext): ClassificationResult {
   }
   // CORE — bullish, high confidence, narrative intact
   else if (
-    agg.avgConfidence >= 0.7 &&
+    agg.avgConfidence >= thresholds.coreConfidenceFloor &&
     netBull >= 2 &&
     (agg.nisScore === null || agg.nisScore >= 60)
   ) {

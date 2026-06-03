@@ -37,6 +37,23 @@ export type PublicScoreWeights = {
 };
 
 /**
+ * Classification confidence floors — the cold-start defaults for the rule-based
+ * asset-class engine. CORE requires avg confidence ≥ coreConfidenceFloor; below
+ * avoidConfidenceFloor a name is dumped to AVOID. The nightly threshold-
+ * calibration loop learns these from per-class hit rates; the classifier accepts
+ * them via the type below.
+ */
+export const CLASSIFICATION_THRESHOLDS = {
+  coreConfidenceFloor: 0.7,
+  avoidConfidenceFloor: 0.3,
+} as const;
+
+export type ClassificationThresholds = {
+  coreConfidenceFloor: number;
+  avoidConfidenceFloor: number;
+};
+
+/**
  * Default per-stage weights for the private blend. Tunable per company.
  * Order: [DCF, Comps, LBO]. ML adjusts on top of the blend.
  */

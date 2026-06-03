@@ -40,6 +40,8 @@ import {
 import { rebuildSystemPortfolio } from '../jobs/systemPortfolio.js';
 import { captureOutcomes } from '../jobs/outcomeCapture.js';
 import { calibrateWeights } from '../jobs/calibrateWeights.js';
+import { calibrateThresholds } from '../jobs/calibrateThresholds.js';
+import { getActiveClassificationThresholds } from '../db/classificationThresholds.js';
 import { scoreUniverse } from '../jobs/universeScore.js';
 import { loadUniverse } from '../jobs/loadUniverse.js';
 import { sendWeeklyProgressReport } from '../jobs/weeklyProgressReport.js';
@@ -226,7 +228,10 @@ async function handleClassification(job: Job<ClassificationJob>): Promise<void> 
     return;
   }
 
-  const result = classify({ entity, signals });
+  // Learned confidence floors from the nightly threshold-calibration loop;
+  // falls back to static defaults inside classify() when none calibrated yet.
+  const thresholds = (await getActiveClassificationThresholds()) ?? undefined;
+  const result = classify({ entity, signals }, thresholds);
   const { classificationId } = await persistClassification(db, result, triggeredBySignalId);
   log.info(
     {
@@ -257,9 +262,12 @@ async function handleMetaOutcome(job: Job<MetaOutcomeJob>): Promise<void> {
 }
 
 async function handleCalibrateWeights(job: Job<CalibrateWeightsJob>): Promise<void> {
-  log.info({ jobId: job.id, reason: job.data.reason }, 'calibrate weights: start');
-  const res = await calibrateWeights();
-  log.info(res, 'calibrate weights: done');
+  log.info({ jobId: job.id, reason: job.data.reason }, 'nightly calibration: start');
+  // Both rule-engine learning steps run here: Public Score weights and
+  // classification confidence floors. Each no-ops until its data matures.
+  const weights = await calibrateWeights();
+  const thresholds = await calibrateThresholds();
+  log.info({ weights, thresholds }, 'nightly calibration: done');
 }
 
 async function handleUniverseScore(job: Job<UniverseScoreJob>): Promise<void> {

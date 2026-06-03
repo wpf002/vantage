@@ -389,6 +389,21 @@ export const scoringWeights = pgTable('scoring_weights', {
   metadata: jsonb('metadata'),
 });
 
+/**
+ * Learned classification confidence floors — write-back target of the nightly
+ * threshold-calibration loop. Append-only; newest row (by as_of) is active.
+ * Cold-start defaults: shared/constants.ts CLASSIFICATION_THRESHOLDS.
+ */
+export const classificationThresholds = pgTable('classification_thresholds', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  asOf: timestamp('as_of', { withTimezone: true }).notNull().defaultNow(),
+  coreConfidenceFloor: real('core_confidence_floor').notNull(),
+  avoidConfidenceFloor: real('avoid_confidence_floor').notNull(),
+  sampleSize: integer('sample_size').notNull(),
+  method: text('method').notNull(),
+  metadata: jsonb('metadata'),
+});
+
 export const publicSegments = pgTable('public_segments', {
   id: uuid('id').primaryKey().defaultRandom(),
   ticker: text('ticker').notNull(),

@@ -1,10 +1,11 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { sql } from 'drizzle-orm';
-import { PUBLIC_SCORE_WEIGHTS } from '@vantage/shared';
+import { PUBLIC_SCORE_WEIGHTS, CLASSIFICATION_THRESHOLDS } from '@vantage/shared';
 import { db } from '../db/client.js';
 import { captureOutcomes, type OutcomePayload, DEFAULT_HORIZON_DAYS } from '../jobs/outcomeCapture.js';
 import { getActiveScoringWeights } from '../db/scoringWeights.js';
+import { getActiveClassificationThresholds } from '../db/classificationThresholds.js';
 
 /**
  * Phase 8 — steps 3–5: the meta-learning surface.
@@ -115,9 +116,11 @@ export const metaRoutes: FastifyPluginAsyncZod = async (app) => {
       }
     }
 
-    // The learning loop's current state — active Public Score weights. Learned
-    // weights supersede the static defaults once the nightly calibration runs.
+    // The learning loops' current state — active Public Score weights and
+    // classification confidence floors. Learned values supersede the static
+    // defaults once the nightly calibration runs.
     const activeWeights = await getActiveScoringWeights();
+    const activeThresholds = await getActiveClassificationThresholds();
 
     return {
       horizonDays: DEFAULT_HORIZON_DAYS,
@@ -129,6 +132,10 @@ export const metaRoutes: FastifyPluginAsyncZod = async (app) => {
       learnedWeights: {
         active: activeWeights ?? PUBLIC_SCORE_WEIGHTS,
         isLearned: activeWeights !== null,
+      },
+      learnedThresholds: {
+        active: activeThresholds ?? CLASSIFICATION_THRESHOLDS,
+        isLearned: activeThresholds !== null,
       },
       scoreReturnCorrelation: pearson(scoreXs, retYs),
       byLabel: summarize(byLabel),

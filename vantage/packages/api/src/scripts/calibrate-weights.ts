@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { calibrateWeights } from '../jobs/calibrateWeights.js';
+import { calibrateThresholds } from '../jobs/calibrateThresholds.js';
 import { closeQueues } from '../queues/index.js';
 
 /**
@@ -15,8 +16,10 @@ import { closeQueues } from '../queues/index.js';
  */
 
 async function main(): Promise<void> {
-  const result = await calibrateWeights();
-  process.stderr.write(`Done. ${JSON.stringify(result)}\n`);
+  const weights = await calibrateWeights();
+  const thresholds = await calibrateThresholds();
+  process.stderr.write(`weights: ${JSON.stringify(weights)}\n`);
+  process.stderr.write(`thresholds: ${JSON.stringify(thresholds)}\n`);
   await closeQueues();
 }
 
