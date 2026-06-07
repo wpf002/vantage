@@ -294,7 +294,13 @@ export function renderProgressEmailHtml(m: WeeklyMetrics): string {
         <h2 class="v-h2" style="margin:0 0 8px 0;font-family:'Playfair Display',Georgia,serif;font-size:18px;color:#111;">Coverage</h2>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="v-section" style="border-top:1px solid #ddd;border-bottom:1px solid #ddd;margin-bottom:28px;">
           ${row('Universe', `${m.universeSize.toLocaleString()} tickers`)}
-          ${row('Added this week', m.addedThisWeek.toLocaleString())}
+          ${
+            // A week that adds >half the universe is the initial bootstrap, not
+            // organic weekly growth — label it so the number isn't misleading.
+            m.addedThisWeek > m.universeSize * 0.5
+              ? row('Universe loaded', `${m.addedThisWeek.toLocaleString()} (initial load)`)
+              : row('Added this week', m.addedThisWeek.toLocaleString())
+          }
           ${row('Scored fresh', `${m.scoredFresh.toLocaleString()} (${fmtPct(m.coveragePct)})`)}
         </table>
 
