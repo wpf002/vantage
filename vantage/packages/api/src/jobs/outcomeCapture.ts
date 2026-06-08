@@ -26,6 +26,21 @@ const log = pino({ level: process.env.LOG_LEVEL ?? 'info', name: 'vantage.meta.o
 /** Production measurement horizon in calendar days. Overridable for backfills. */
 export const DEFAULT_HORIZON_DAYS = Number(process.env.META_OUTCOME_HORIZON_DAYS ?? 30);
 
+/**
+ * Safety ceiling on decisions graded per run. High enough to clear a full day's
+ * matured set (~5k) plus backlog in one nightly pass — so grading keeps pace
+ * with scoring instead of falling behind 1k/day — but bounded so a pathological
+ * backlog can't run unbounded. Overridable via opts.limit.
+ */
+const MAX_DECISIONS_PER_RUN = Number(process.env.META_OUTCOME_MAX_DECISIONS ?? 50000);
+
+/**
+ * Bounded concurrency for per-ticker price-history fetches. Without this, grading
+ * a large matured set would fire thousands of FMP calls at once and trip rate
+ * limits. If FMP 429s appear, lower META_OUTCOME_FETCH_CONCURRENCY.
+ */
+const PRICE_FETCH_CONCURRENCY = Number(process.env.META_OUTCOME_FETCH_CONCURRENCY ?? 5);
+
 /** A "neutral" read is correct if the stock barely moved, within this band. */
 const NEUTRAL_BAND = 0.02;
 
@@ -67,6 +82,22 @@ function priceOnOrBefore(sorted: FmpHistoricalPrice[], target: string): FmpHisto
 
 function toISODate(d: Date): string {
   return d.toISOString().slice(0, 10);
+}
+
+/** Run `fn` over `items` with at most `limit` promises in flight at once. */
+async function forEachLimit<T>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<void>,
+): Promise<void> {
+  let i = 0;
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (i < items.length) {
+      const idx = i++;
+      await fn(items[idx]!);
+    }
+  });
+  await Promise.all(runners);
 }
 
 /** Map a Public Score direction onto an expected price move. */
@@ -112,7 +143,7 @@ export async function captureOutcomes(
       ),
     )
     .orderBy(schema.platformDecisions.createdAt)
-    .limit(opts.limit ?? 1000);
+    .limit(opts.limit ?? MAX_DECISIONS_PER_RUN);
 
   const result: CaptureResult = { horizonDays, scanned: decisions.length, graded: 0, skipped: 0 };
   if (decisions.length === 0) return result;
@@ -120,19 +151,18 @@ export async function captureOutcomes(
   // Tickers only (skip private-entity UUIDs — no public price series).
   const tickers = [...new Set(decisions.map((d) => d.entity).filter((e) => !UUID_RE.test(e)))];
 
-  // Batch the price-history fetches, one per ticker.
+  // Fetch price history once per ticker, with bounded concurrency so a large
+  // matured set doesn't burst thousands of FMP calls at once.
   const historyByTicker = new Map<string, FmpHistoricalPrice[]>();
-  await Promise.all(
-    tickers.map(async (t) => {
-      try {
-        const rows = await fmp.historicalPrices(t, 400);
-        rows.sort((a, b) => (a.date < b.date ? 1 : -1)); // DESC
-        historyByTicker.set(t, rows);
-      } catch (err) {
-        log.warn({ ticker: t, err: (err as Error).message }, 'price history fetch failed');
-      }
-    }),
-  );
+  await forEachLimit(tickers, PRICE_FETCH_CONCURRENCY, async (t) => {
+    try {
+      const rows = await fmp.historicalPrices(t, 400);
+      rows.sort((a, b) => (a.date < b.date ? 1 : -1)); // DESC
+      historyByTicker.set(t, rows);
+    } catch (err) {
+      log.warn({ ticker: t, err: (err as Error).message }, 'price history fetch failed');
+    }
+  });
 
   // For public_score grading we need the score's direction/label/score. Pull
   // every score for the involved tickers once and match by nearest as_of.
