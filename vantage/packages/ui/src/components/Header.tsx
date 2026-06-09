@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Route } from 'next';
 import { auth, signOut } from '@/lib/auth';
+import { MobileNavToggle } from './MobileNav';
 
 /**
  * Compact top header — single row, brand on the left, account strip
@@ -26,7 +27,8 @@ export async function Header() {
     <header className="sticky top-0 z-20 bg-cream border-b border-ink-100">
       <div className="flex items-baseline justify-between gap-6 px-6 lg:px-8 py-3">
         {/* Brand */}
-        <div className="flex items-baseline gap-3">
+        <div className="flex items-center gap-2 sm:items-baseline sm:gap-3">
+          <MobileNavToggle />
           <Link
             href="/"
             className="font-display text-2xl tracking-editorial text-ink-900 border-b-2 border-editorial inline-block leading-none pb-0.5"

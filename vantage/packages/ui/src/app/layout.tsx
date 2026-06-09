@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Playfair_Display, Source_Serif_4, Inter, IBM_Plex_Mono } from 'next/font/google';
 import { Header } from '@/components/Header';
 import { SideNav } from '@/components/SideNav';
+import { MobileNavProvider, MobileNavDrawer } from '@/components/MobileNav';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 import '@/styles/globals.css';
 
@@ -59,13 +60,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="h-screen overflow-hidden flex flex-col">
         <ServiceWorkerRegistration />
-        <Header />
-        <div className="flex flex-1 min-h-0">
-          <SideNav />
-          <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-6 py-10 lg:px-12 lg:py-12">
-            {children}
-          </main>
-        </div>
+        <MobileNavProvider>
+          <Header />
+          <div className="flex flex-1 min-h-0">
+            <MobileNavDrawer>
+              <SideNav />
+            </MobileNavDrawer>
+            <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-6 py-10 lg:px-12 lg:py-12">
+              {children}
+            </main>
+          </div>
+        </MobileNavProvider>
       </body>
     </html>
   );

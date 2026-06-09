@@ -3,12 +3,11 @@ import { apiServerGetNullable } from '@/lib/api-server';
 import { SideNavLink } from './SideNavLink';
 
 /**
- * Persistent left navigation panel. Page links only — brand and account
- * strip live in the top <Header />.
+ * Left navigation links — brand and account strip live in the top <Header />.
  *
- * Takes the full height of its parent flex row (which itself sits below
- * the fixed-height header), so the panel is always flush with the header
- * above and scrolls internally if its content overflows.
+ * Renders just the link list; the surrounding container (a static sidebar on
+ * md+, a slide-in drawer on mobile) is provided by <MobileNavDrawer/> in the
+ * layout. Kept a server component so it can fetch the unread-alert badge.
  */
 
 // Discovery tools first, then the personal pair (Watchlists + Alerts, which
@@ -40,15 +39,7 @@ export async function SideNav() {
   }
 
   return (
-    <aside
-      className="
-        bg-cream-200
-        w-40 xl:w-44 flex-shrink-0
-        h-full overflow-y-auto
-        px-3 py-5
-        flex flex-col gap-1
-      "
-    >
+    <>
       {NAV_BEFORE_ALERTS.map((item) => (
         <SideNavLink key={item.href} href={item.href} label={item.label} />
       ))}
@@ -57,6 +48,6 @@ export async function SideNav() {
         <SideNavLink key={item.href} href={item.href} label={item.label} />
       ))}
       {signedIn ? <SideNavLink href="/settings" label="Settings" /> : null}
-    </aside>
+    </>
   );
 }
