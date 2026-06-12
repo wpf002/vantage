@@ -12,8 +12,12 @@ import type { NewsArticle } from './news-fetcher.js';
  */
 
 const ANTHROPIC_BASE = 'https://api.anthropic.com/v1/messages';
-export const NARRATIVE_TAGGER_MODEL = 'claude-opus-4-7';
-const MAX_TOKENS = 1024;
+// Narrative tagging is a constrained classification task (pick which revenue
+// segment the news is about, with a confidence). Haiku is the right tier — far
+// cheaper than Opus — and the 0.5 confidence floor + rule-based heuristic
+// fallback in the NIS engine catch any weak tag, so quality is protected.
+export const NARRATIVE_TAGGER_MODEL = 'claude-haiku-4-5';
+const MAX_TOKENS = 256;
 
 const SYSTEM_PROMPT = [
   'You are a financial analyst classifying which of a company\'s reported revenue',

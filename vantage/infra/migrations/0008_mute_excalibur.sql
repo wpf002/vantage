@@ -1,0 +1,1 @@
+ALTER TABLE "public_narrative_tags" ADD COLUMN "news_hash" text;

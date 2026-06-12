@@ -561,6 +561,9 @@ export const publicNarrativeTags = pgTable(
     rationale: text('rationale'),
     modelVersion: text('model_version').notNull(),
     source: text('source').notNull(), // 'news' | 'fallback'
+    // sha256 of the headlines this tag was derived from — lets the tagger skip
+    // the LLM call when news is unchanged since the last news-based tag.
+    newsHash: text('news_hash'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({

@@ -1,5 +1,6 @@
+import { createHash } from 'node:crypto';
 import pino from 'pino';
-import { and, gte, eq, sql } from 'drizzle-orm';
+import { and, gte, eq, desc, sql } from 'drizzle-orm';
 import { FmpClient } from '@vantage/data-ingest/public';
 import { fetchRecentNews, tagNarrativeSegments } from '@vantage/core-public/narrative-tagging';
 import { db, schema } from '../db/client.js';
@@ -16,6 +17,20 @@ const log = pino({ level: process.env.LOG_LEVEL ?? 'info', name: 'vantage.narrat
 
 const EST_COST_PER_TICKER_USD = 0.05;
 const DAILY_BUDGET_USD = Number(process.env.NARRATIVE_TAGGING_DAILY_BUDGET_USD ?? 50);
+
+// Narrative segments (which product line is the story) are slow-moving, so a
+// weekly refresh is plenty — re-tagging every 24h was the main token sink.
+const STALE_AFTER_MS = Number(process.env.NARRATIVE_TAG_TTL_HOURS ?? 168) * 60 * 60 * 1000;
+
+/** Stable hash of the headlines a tag is derived from (mirrors the tagger's
+ * top-40 slice), so we can skip the LLM when news is unchanged. */
+function hashNews(news: Array<{ title: string }>): string {
+  const basis = news
+    .slice(0, 40)
+    .map((n) => n.title.trim())
+    .join('\n');
+  return createHash('sha256').update(basis).digest('hex');
+}
 
 /** Tidy raw FMP segment keys into display names (drops camelCase / underscores). */
 function normalizeSegmentName(raw: string): string {
@@ -63,6 +78,7 @@ async function persistTags(input: {
   rationale: string | null;
   modelVersion: string;
   source: 'news' | 'fallback';
+  newsHash?: string | null;
 }): Promise<void> {
   await db
     .insert(schema.publicNarrativeTags)
@@ -73,6 +89,7 @@ async function persistTags(input: {
       rationale: input.rationale,
       modelVersion: input.modelVersion,
       source: input.source,
+      newsHash: input.newsHash ?? null,
     })
     .onConflictDoNothing();
 }
@@ -117,6 +134,31 @@ export async function tagNarrativeForTicker(ticker: string): Promise<NarrativeTa
     return { ticker: upper, source: 'fallback', segments: [], estimatedCostUsd: 0 };
   }
 
+  // News-change dedup — if the headlines are identical to the last news-based
+  // tag, the narrative hasn't moved. Refresh freshness (so the daily sweep
+  // won't re-enqueue it) and skip the LLM call entirely.
+  const newsHash = hashNews(news);
+  const [prior] = await db
+    .select({
+      id: schema.publicNarrativeTags.id,
+      newsHash: schema.publicNarrativeTags.newsHash,
+      source: schema.publicNarrativeTags.source,
+      narrativeSegments: schema.publicNarrativeTags.narrativeSegments,
+    })
+    .from(schema.publicNarrativeTags)
+    .where(eq(schema.publicNarrativeTags.ticker, upper))
+    .orderBy(desc(schema.publicNarrativeTags.asOf))
+    .limit(1);
+  if (prior && prior.source === 'news' && prior.newsHash && prior.newsHash === newsHash) {
+    await db
+      .update(schema.publicNarrativeTags)
+      .set({ asOf: new Date() })
+      .where(eq(schema.publicNarrativeTags.id, prior.id));
+    const segs = prior.narrativeSegments as Array<{ name: string; confidence: number }>;
+    log.info({ ticker: upper }, 'narrative-tag: news unchanged — refreshed, skipped LLM');
+    return { ticker: upper, source: 'news', segments: segs, estimatedCostUsd: 0 };
+  }
+
   const segments = await knownSegments(upper, fmpApiKey);
   const result = await tagNarrativeSegments(upper, news, segments, process.env.ANTHROPIC_API_KEY);
 
@@ -139,6 +181,7 @@ export async function tagNarrativeForTicker(ticker: string): Promise<NarrativeTa
     rationale: result.rationale,
     modelVersion: result.modelVersion,
     source: 'news',
+    newsHash,
   });
   log.info(
     { ticker: upper, segments: segs.length, estCost: EST_COST_PER_TICKER_USD },
@@ -147,7 +190,7 @@ export async function tagNarrativeForTicker(ticker: string): Promise<NarrativeTa
   return { ticker: upper, source: 'news', segments: segs, estimatedCostUsd: EST_COST_PER_TICKER_USD };
 }
 
-/** Are this ticker's narrative tags stale (>24h) or missing? */
+/** Are this ticker's narrative tags stale (older than the TTL) or missing? */
 export async function narrativeTagsStale(ticker: string): Promise<boolean> {
   const rows = await db
     .select({ asOf: schema.publicNarrativeTags.asOf })
@@ -156,5 +199,5 @@ export async function narrativeTagsStale(ticker: string): Promise<boolean> {
     .orderBy(sql`${schema.publicNarrativeTags.asOf} desc`)
     .limit(1);
   if (rows.length === 0) return true;
-  return Date.now() - rows[0]!.asOf.getTime() > 24 * 60 * 60 * 1000;
+  return Date.now() - rows[0]!.asOf.getTime() > STALE_AFTER_MS;
 }
