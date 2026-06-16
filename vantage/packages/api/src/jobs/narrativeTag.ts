@@ -15,7 +15,11 @@ import { db, schema } from '../db/client.js';
 
 const log = pino({ level: process.env.LOG_LEVEL ?? 'info', name: 'vantage.narrative-tag' });
 
-const EST_COST_PER_TICKER_USD = 0.05;
+// Per-tag cost estimate used only for the daily budget guard. Tuned to the
+// actual model: Haiku 4.5 with ~1-2k input + <=256 output ≈ $0.002-0.003/call.
+// (Was 0.05 for Opus — leaving it stale made the $50 cap fall ~2/3 of the
+// universe back to the heuristic despite real spend being only a few dollars.)
+const EST_COST_PER_TICKER_USD = Number(process.env.NARRATIVE_TAG_EST_COST_USD ?? 0.003);
 const DAILY_BUDGET_USD = Number(process.env.NARRATIVE_TAGGING_DAILY_BUDGET_USD ?? 50);
 
 // Narrative segments (which product line is the story) are slow-moving, so a
