@@ -4,6 +4,10 @@
 
 **Mission:** replace 40-hour analyst Excel workups with 4-minute auditable tear sheets.
 
+> 📄 **For the current, deployed-state architecture and status, see [PROJECT.md](./PROJECT.md).**
+> The build-phase table near the bottom of this README is historical — the
+> platform is fully built and live in production.
+
 ---
 
 ## What it does
@@ -219,6 +223,9 @@ Requires `RESEND_API_KEY` (already set if alerts are working).
 ---
 
 ## Build phases
+
+> ⚠️ **Historical.** This table reflects the original plan; the platform is now
+> fully built and deployed. See [PROJECT.md](./PROJECT.md) for current state.
 
 | Phase | Scope                                                                    | Status      |
 |-------|--------------------------------------------------------------------------|-------------|
