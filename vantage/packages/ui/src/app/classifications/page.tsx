@@ -30,12 +30,12 @@ const CLASS_META: Record<AssetClass, { label: string; deck: string }> = {
     deck: 'High-confidence holdings with durable fundamentals. Long-duration positions.',
   },
   HIGH_ASYMMETRY: {
-    label: 'High Asymmetry',
+    label: 'Opportunistic',
     deck: 'Bullish with controlled downside. Sized for upside if the thesis holds up.',
   },
   TACTICAL: {
     label: 'Tactical',
-    deck: 'Bullish but timing-dependent. Narrative heat is elevated, so entry matters.',
+    deck: 'Bullish but timing-dependent. Speculative premium is elevated, so entry matters.',
   },
   AVOID: {
     label: 'Avoid',
@@ -46,7 +46,7 @@ const CLASS_META: Record<AssetClass, { label: string; deck: string }> = {
 const FILTERS: Array<{ key: AssetClass | 'ALL'; label: string }> = [
   { key: 'ALL', label: 'All' },
   { key: 'CORE', label: 'Core' },
-  { key: 'HIGH_ASYMMETRY', label: 'High Asymmetry' },
+  { key: 'HIGH_ASYMMETRY', label: 'Opportunistic' },
   { key: 'TACTICAL', label: 'Tactical' },
   { key: 'AVOID', label: 'Avoid' },
 ];
@@ -67,6 +67,7 @@ const SECTOR_LABEL: Record<string, string> = {
 };
 
 const HOUR_MS = 60 * 60 * 1000;
+const PAGE_SIZE = 20;
 
 function relativeAge(asOf: string): string {
   const ms = Date.now() - new Date(asOf).getTime();
@@ -102,10 +103,68 @@ async function fetchClassifications(filter: AssetClass | 'ALL'): Promise<Classif
   }
 }
 
+function ClassTable({ items }: { items: ClassificationRow[] }) {
+  return (
+    <table className="editorial-table">
+      <thead>
+        <tr>
+          <th>Company</th>
+          <th>Ticker</th>
+          <th>Sector</th>
+          <th className="num">Confidence</th>
+          <th>Why</th>
+          <th>Last classified</th>
+        </tr>
+      </thead>
+      <tbody>
+        {items.map((row) => {
+          const href = hrefForRow(row);
+          const r = truncate(row.rationale, 160);
+          const sectorDisplay = row.sector ? SECTOR_LABEL[row.sector] ?? row.sector : '—';
+          return (
+            <tr key={row.entity}>
+              <td className="font-serif text-ink-900 align-top">
+                {href ? (
+                  <Link
+                    href={href as Route}
+                    className="hover:underline decoration-editorial underline-offset-4"
+                  >
+                    {row.name}
+                  </Link>
+                ) : (
+                  row.name
+                )}
+              </td>
+              <td className="font-mono text-xs text-ink-700 align-top">
+                {row.ticker ?? '—'}
+              </td>
+              <td className="font-sans text-xs uppercase tracking-wider text-ink-700 align-top">
+                {sectorDisplay}
+              </td>
+              <td className="num align-top">
+                {(row.confidence * 100).toFixed(0)}%
+              </td>
+              <td
+                className="font-serif italic text-ink-700 align-top leading-relaxed"
+                title={r.truncated ? r.full : undefined}
+              >
+                <div className="max-w-[28rem]">{r.display}</div>
+              </td>
+              <td className="font-mono text-xs text-ink-500 align-top whitespace-nowrap">
+                {relativeAge(row.asOf)}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
 export default async function ClassificationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ class?: string }>;
+  searchParams: Promise<{ class?: string; page?: string }>;
 }) {
   const sp = await searchParams;
   const requested = (sp.class ?? 'ALL').toUpperCase();
@@ -113,6 +172,9 @@ export default async function ClassificationsPage({
     requested === 'CORE' || requested === 'HIGH_ASYMMETRY' || requested === 'TACTICAL' || requested === 'AVOID'
       ? requested
       : 'ALL';
+
+  const pageParam = Number(sp.page ?? '1');
+  const page = isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
 
   const rows = await fetchClassifications(active);
   const grouped: Record<AssetClass, ClassificationRow[]> = {
@@ -133,8 +195,8 @@ export default async function ClassificationsPage({
           Where Every Read Lands
         </h1>
         <p className="font-serif text-deck text-ink-800 max-w-measure leading-relaxed">
-          Every company Vantage has scored, sorted into one of four asset classes — Core, High
-          Asymmetry, Tactical, or Avoid.
+          Every company Vantage has scored, sorted into one of four asset classes — Core, Opportunistic,
+          Tactical, or Avoid.
         </p>
       </header>
 
@@ -164,71 +226,94 @@ export default async function ClassificationsPage({
       <section className="col-span-12 space-y-12">
         {groupsToRender.map((cls) => {
           const meta = CLASS_META[cls];
-          const items = grouped[cls];
+          const allItems = grouped[cls];
+
+          if (active === 'ALL') {
+            // In the overview, show top PAGE_SIZE per class with a link to see all
+            const displayItems = allItems.slice(0, PAGE_SIZE);
+            const hasMore = allItems.length >= PAGE_SIZE;
+            return (
+              <div key={cls}>
+                <div className="flex items-center justify-between min-h-[2.75rem] border-b border-ink-100 mb-4">
+                  <div>
+                    <p className="eyebrow">{meta.label}</p>
+                    <p className="font-sans text-xs text-ink-500 mt-0.5">{meta.deck}</p>
+                  </div>
+                  <Link
+                    href={`/classifications?class=${cls}` as Route}
+                    className="font-sans text-xs uppercase tracking-wider text-editorial hover:text-editorial-dark whitespace-nowrap ml-4"
+                  >
+                    View all →
+                  </Link>
+                </div>
+                {displayItems.length === 0 ? (
+                  <p className="font-serif italic text-ink-500">No companies in this bucket yet.</p>
+                ) : (
+                  <>
+                    <ClassTable items={displayItems} />
+                    {hasMore && (
+                      <p className="font-sans text-xs text-ink-500 mt-3">
+                        Showing top {displayItems.length} by confidence.{' '}
+                        <Link href={`/classifications?class=${cls}` as Route} className="text-editorial hover:underline">
+                          View all →
+                        </Link>
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          }
+
+          // Filtered view — paginate
+          const start = (page - 1) * PAGE_SIZE;
+          const displayItems = allItems.slice(start, start + PAGE_SIZE);
+          const hasPrev = page > 1;
+          const hasNext = allItems.length > start + PAGE_SIZE;
+
+          const prevHref = hasPrev
+            ? (`/classifications?class=${cls}&page=${page - 1}` as Route)
+            : null;
+          const nextHref = hasNext
+            ? (`/classifications?class=${cls}&page=${page + 1}` as Route)
+            : null;
+
           return (
             <div key={cls}>
               <div className="flex items-center min-h-[2.75rem] border-b border-ink-100 mb-6">
-                <p className="eyebrow">{meta.label}</p>
+                <div>
+                  <p className="eyebrow">{meta.label}</p>
+                  <p className="font-sans text-xs text-ink-500 mt-0.5">{meta.deck}</p>
+                </div>
               </div>
 
-              {items.length === 0 ? (
+              {displayItems.length === 0 ? (
                 <p className="font-serif italic text-ink-500">
                   No companies in this bucket yet.
                 </p>
               ) : (
-                <table className="editorial-table">
-                  <thead>
-                    <tr>
-                      <th>Company</th>
-                      <th>Ticker</th>
-                      <th>Sector</th>
-                      <th className="num">Confidence</th>
-                      <th>Why</th>
-                      <th>Last classified</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((row) => {
-                      const href = hrefForRow(row);
-                      const r = truncate(row.rationale, 160);
-                      const sectorDisplay = row.sector ? SECTOR_LABEL[row.sector] ?? row.sector : '—';
-                      return (
-                        <tr key={row.entity}>
-                          <td className="font-serif text-ink-900 align-top">
-                            {href ? (
-                              <Link
-                                href={href as Route}
-                                className="hover:underline decoration-editorial underline-offset-4"
-                              >
-                                {row.name}
-                              </Link>
-                            ) : (
-                              row.name
-                            )}
-                          </td>
-                          <td className="font-mono text-xs text-ink-700 align-top">
-                            {row.ticker ?? '—'}
-                          </td>
-                          <td className="font-sans text-xs uppercase tracking-wider text-ink-700 align-top">
-                            {sectorDisplay}
-                          </td>
-                          <td className="num align-top">
-                            {(row.confidence * 100).toFixed(0)}%
-                          </td>
-                          <td
-                            className="font-serif italic text-ink-700 align-top leading-relaxed"
-                            title={r.truncated ? r.full : undefined}
-                          >
-                            <div className="max-w-[28rem]">{r.display}</div>
-                          </td>
-                          <td className="font-mono text-xs text-ink-500 align-top whitespace-nowrap">
-                            {relativeAge(row.asOf)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                <>
+                  <ClassTable items={displayItems} />
+                  <div className="flex items-center justify-between mt-6 pt-4">
+                    {hasPrev && prevHref ? (
+                      <Link href={prevHref} className="font-sans text-xs uppercase tracking-wider text-editorial hover:text-editorial-dark">
+                        ← Previous
+                      </Link>
+                    ) : (
+                      <span className="font-sans text-xs uppercase tracking-wider text-ink-300">← Previous</span>
+                    )}
+                    <span className="font-mono text-xs text-ink-500">
+                      {start + 1}–{start + displayItems.length} of {allItems.length}{allItems.length >= 200 ? '+' : ''}
+                    </span>
+                    {hasNext && nextHref ? (
+                      <Link href={nextHref} className="font-sans text-xs uppercase tracking-wider text-editorial hover:text-editorial-dark">
+                        Next →
+                      </Link>
+                    ) : (
+                      <span className="font-sans text-xs uppercase tracking-wider text-ink-300">Next →</span>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           );

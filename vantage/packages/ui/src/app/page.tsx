@@ -64,7 +64,7 @@ export default function Home() {
           <ExplainerColumn
             eyebrow="Public Companies"
             headline="Is the price ahead of the business?"
-            body="Measures how far the stock has run versus what the fundamentals support, whether the growth story still holds, and how much hype is in the price. One score, one verdict."
+            body="Measures how far the stock has run versus what the fundamentals support, whether the growth story still holds, and how much speculative premium is in the price. One score, one verdict."
           />
           <ExplainerColumn
             eyebrow="Private Companies"
@@ -79,7 +79,7 @@ export default function Home() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 mt-10 divide-y md:divide-y-0 md:divide-x divide-ink-100">
           <p className="font-serif text-base text-ink-700 leading-relaxed pb-8 md:pb-0 md:pr-10">
-            Every score rolls up into one of four asset classes — Core, High Asymmetry,
+            Every score rolls up into one of four asset classes — Core, Opportunistic,
             Tactical, or Avoid — listed under{' '}
             <Link
               href={'/classifications' as Route}

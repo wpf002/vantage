@@ -59,7 +59,7 @@ export interface PortfolioListItem {
 
 export const SLEEVE_LABELS: Record<'core' | 'growth' | 'defensive' | 'tactical', string> = {
   core: 'Core',
-  growth: 'Growth Bets',
+  growth: 'Growth',
   defensive: 'Defensive',
   tactical: 'Tactical',
 };

@@ -73,14 +73,14 @@ interface LatestPublicScoreResponse {
 
 const OP_LABELS: Record<string, string> = {
   'public.egs': 'Expectation Gap Analysis',
-  'public.nis': 'Narrative Integrity Check',
-  'public.nhs': 'Narrative Heat Reading',
+  'public.nis': 'Thesis Quality Check',
+  'public.nhs': 'Speculative Premium Reading',
 };
 
 const FACTOR_MEANING = {
   egs: 'How far the latest results landed from what analysts expected — and whether the price agreed.',
   nis: 'Whether the growth story investors are paying for still holds up in the segment numbers.',
-  nhs: 'How much hype and momentum is priced in right now.',
+  nhs: 'How much speculative premium and momentum is priced in right now.',
 } as const;
 
 const MONTHS = [
@@ -246,13 +246,13 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
       reading: egsReading(egs.score, egs.direction),
     },
     {
-      name: 'Narrative Integrity',
+      name: 'Thesis Quality',
       meaning: FACTOR_MEANING.nis,
       score: nis.score,
       reading: nisReading(nis.score),
     },
     {
-      name: 'Narrative Heat',
+      name: 'Speculative Premium',
       meaning: FACTOR_MEANING.nhs,
       score: nhs.score,
       reading: nhsReading(nhs.score),
@@ -375,7 +375,7 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
                 </table>
                 {narrativeSegment && (
                   <p className="font-sans text-xs text-ink-500 mt-3 leading-snug max-w-measure">
-                    Narrative Integrity is currently computed against {narrativeSegment.name}.
+                    Thesis Quality is currently computed against {narrativeSegment.name}.
                     Segment selection is rule-based for now; a later release will hand it to a model.
                   </p>
                 )}

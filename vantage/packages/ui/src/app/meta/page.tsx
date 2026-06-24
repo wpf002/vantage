@@ -54,7 +54,7 @@ const LABEL_DISPLAY: Record<string, string> = {
 };
 const CLASS_DISPLAY: Record<string, string> = {
   CORE: 'Core',
-  HIGH_ASYMMETRY: 'High Asymmetry',
+  HIGH_ASYMMETRY: 'Opportunistic',
   TACTICAL: 'Tactical',
   AVOID: 'Avoid',
 };
@@ -130,7 +130,7 @@ export default async function MetaPage() {
             <Stat label="Pending" value={formatNumber(data.totals.pending)} />
             <Stat label="Overall Hit Rate" value={pct(data.totals.overallHitRate)} />
             <Stat
-              label="Score Return"
+              label="Return Correlation"
               value={data.scoreReturnCorrelation === null ? '—' : data.scoreReturnCorrelation.toFixed(2)}
             />
           </div>

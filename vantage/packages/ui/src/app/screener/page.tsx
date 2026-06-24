@@ -44,7 +44,7 @@ const SECTORS: Array<{ value: string; display: string }> = [
 
 const CLASSES: Array<{ value: string; display: string }> = [
   { value: 'CORE', display: 'Core' },
-  { value: 'HIGH_ASYMMETRY', display: 'High Asymmetry' },
+  { value: 'HIGH_ASYMMETRY', display: 'Opportunistic' },
   { value: 'TACTICAL', display: 'Tactical' },
   { value: 'AVOID', display: 'Avoid' },
 ];
