@@ -110,9 +110,9 @@ export default async function PrivateCompany({ params }: { params: Promise<{ id:
         <section className="col-span-12 lg:col-span-8 space-y-6">
           <p className="eyebrow">No valuation yet</p>
           <p className="font-serif text-deck text-ink-800 max-w-measure leading-relaxed">
-            No valuation on file for {f.name}. A fresh run pulls current peer financials, macro
-            rates, engineering velocity, patent and funding activity, and a revenue base from
-            company research, then values the company three ways and blends them.
+            No valuation on file for {f.name}. A fresh run gathers current peer financials, macro
+            rates, engineering activity, patent and funding data, and an estimated revenue base,
+            then values the company three ways and blends the results.
           </p>
           <RunValuationButton companyId={id} />
         </section>
@@ -137,8 +137,8 @@ export default async function PrivateCompany({ params }: { params: Promise<{ id:
     const why =
       weight === 0
         ? result
-          ? 'Set aside — confidence below the floor for the blend.'
-          : 'Not run — inputs unavailable for this method.'
+          ? 'Excluded — below the confidence threshold for this blend.'
+          : 'Not applicable — inputs unavailable for this method.'
         : (result?.rationale ?? 'Contributed to the blended valuation.');
     return { method: METHOD_LABELS[m], weight, why };
   });

@@ -57,7 +57,7 @@ const LABEL_DISPLAY: Record<string, string> = {
 };
 const CLASS_DISPLAY: Record<string, string> = {
   CORE: 'Core',
-  HIGH_ASYMMETRY: 'High Asymmetry',
+  HIGH_ASYMMETRY: 'Opportunistic',
   TACTICAL: 'Tactical',
   AVOID: 'Avoid',
 };

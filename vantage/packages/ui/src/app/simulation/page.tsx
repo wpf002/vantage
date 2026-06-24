@@ -274,7 +274,7 @@ export default async function SimulationPickerPage({ searchParams }: PageProps) 
                   defaultValue={prefillSeed}
                   className="w-32 bg-transparent border-0 border-b border-ink-300 focus:border-editorial focus:outline-none font-mono text-lg py-2 px-0 text-right placeholder:text-ink-300"
                 />
-                <p className="font-sans text-xs text-ink-700 mt-2">Blank = random.</p>
+                <p className="font-sans text-xs text-ink-700 mt-2">Leave blank for a random seed.</p>
               </div>
             </div>
           </section>

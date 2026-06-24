@@ -110,8 +110,8 @@ export default async function SearchPage({
           </p>
           <p className="font-serif text-deck text-ink-800 leading-relaxed">
             We haven&apos;t scored {result.suggestion.ticker} yet, but it&apos;s a real
-            US-listed company. A live run pulls every input fresh from FMP and computes its
-            Public Score in about fifteen seconds.
+            US-listed company. A live run pulls current market data and computes its Public
+            Score in about fifteen seconds.
           </p>
           <ScoreTickerButton ticker={result.suggestion.ticker} />
         </div>

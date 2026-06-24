@@ -42,8 +42,8 @@ const SIGNAL_TYPE_LABELS: Record<string, string> = {
 
 const OP_LABELS: Record<string, { group: string; label: string }> = {
   'public.egs': { group: 'EGS', label: 'Expectation Gap' },
-  'public.nis': { group: 'NIS', label: 'Narrative Integrity' },
-  'public.nhs': { group: 'NHS', label: 'Narrative Heat' },
+  'public.nis': { group: 'NIS', label: 'Fundamental Support' },
+  'public.nhs': { group: 'NHS', label: 'Sentiment Premium' },
   'public.score': { group: 'Public', label: 'Score Blend' },
   'private.dcf': { group: 'Private', label: 'Discounted Cash Flow' },
   'private.comps': { group: 'Private', label: 'Comparable Companies' },
@@ -112,7 +112,7 @@ function humanizeKey(key: string): string {
 
 const ASSET_CLASS_LABELS: Record<string, string> = {
   CORE: 'Core',
-  HIGH_ASYMMETRY: 'High Asymmetry',
+  HIGH_ASYMMETRY: 'Opportunistic',
   TACTICAL: 'Tactical',
   AVOID: 'Avoid',
 };
@@ -201,15 +201,14 @@ export default async function AuditDetailPage({
         </div>
 
         <div>
-          <p className="eyebrow mb-3">How We Got Here</p>
+          <p className="eyebrow mb-3">Calculation Steps</p>
           <p className="font-sans text-xs text-ink-700 mb-8 leading-snug max-w-measure">
-            Every transform that produced this signal, in order. Inputs and outputs are the
-            actual values handed to and produced by each operation — nothing here is a black
-            box.
+            The full calculation chain — inputs and outputs at each step. Every number is
+            traceable to source.
           </p>
 
           {detail.lineage.length === 0 ? (
-            <p className="font-serif italic text-ink-700">No transform chain recorded.</p>
+            <p className="font-serif italic text-ink-700">No steps recorded.</p>
           ) : (
             <div>
               {detail.lineage.map((step) => (
@@ -238,7 +237,7 @@ export default async function AuditDetailPage({
 
         <div>
           <hr className="border-ink-100 mb-6" />
-          <p className="eyebrow mb-3">Related Reads</p>
+          <p className="eyebrow mb-3">Related Analyses</p>
           <RelatedReadsList signals={related} />
         </div>
       </aside>
