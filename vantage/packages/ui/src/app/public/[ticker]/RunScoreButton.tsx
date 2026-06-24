@@ -18,7 +18,7 @@ export function RunScoreButton({ ticker }: { ticker: string }) {
   if (state === 'running') {
     return (
       <p className="font-serif text-deck text-ink-700 italic max-w-measure leading-relaxed">
-        Pulling fresh data — about 10 seconds.
+        Loading — this takes about 10 seconds.
       </p>
     );
   }
@@ -42,8 +42,7 @@ export function RunScoreButton({ ticker }: { ticker: string }) {
       </button>
       {state === 'error' && (
         <p className="font-sans text-xs text-editorial mt-3 leading-snug">
-          Something went wrong pulling fresh data. Check that the API and its FMP key are
-          configured, then try again.
+          Unable to load data. Please try again.
         </p>
       )}
     </div>

@@ -64,7 +64,7 @@ export default function Home() {
           <ExplainerColumn
             eyebrow="Public Companies"
             headline="Is the price ahead of the business?"
-            body="Measures how far the stock has run versus what the fundamentals support, whether the growth story still holds, and how much speculative premium is in the price. One score, one verdict."
+            body="Measures how far the stock has run versus what the fundamentals support, whether the growth story still holds, and how much sentiment premium is in the price. One score, one verdict."
           />
           <ExplainerColumn
             eyebrow="Private Companies"
@@ -115,7 +115,7 @@ function SearchBar() {
         className="flex-1 min-w-0 bg-transparent font-serif text-xl placeholder:text-ink-300 focus:outline-none"
       />
       <button type="submit" className="font-sans text-sm uppercase tracking-wider text-ink-900 hover:text-editorial">
-        Look It Up →
+        Search →
       </button>
     </form>
   );

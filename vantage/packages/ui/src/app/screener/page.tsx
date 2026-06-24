@@ -312,7 +312,7 @@ export default async function ScreenerPage({ searchParams }: { searchParams: Pro
         <section className="col-span-12 lg:col-span-9 min-w-0 flex flex-col min-h-0">
         {results.length === 0 ? (
           <p className="font-serif italic text-ink-500 text-lg py-12">
-            No tickers match these filters. Loosen them up.
+            No results. Adjust your filters.
           </p>
         ) : (
           <>

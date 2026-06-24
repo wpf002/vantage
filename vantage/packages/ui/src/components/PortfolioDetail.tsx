@@ -20,7 +20,7 @@ export function PortfolioDetailView({ portfolio }: { portfolio: PortfolioDetail 
   return (
     <div className="grid grid-cols-12 gap-x-10 gap-y-10">
       <section className="col-span-12 lg:col-span-7">
-        <p className="eyebrow mb-2">How the Money Is Split</p>
+        <p className="eyebrow mb-2">Sleeve Allocation</p>
         <p className="font-sans text-xs text-ink-700 mb-4 leading-snug max-w-measure">
           Each group plays a different role: Core for steady compounders, Growth for higher-risk
           higher-upside names, Defensive for ballast, Tactical for shorter-term ideas.
@@ -29,8 +29,8 @@ export function PortfolioDetailView({ portfolio }: { portfolio: PortfolioDetail 
           <thead>
             <tr>
               <th>Group</th>
-              <th className="num">Aimed For</th>
-              <th className="num">Actually Held</th>
+              <th className="num">Target</th>
+              <th className="num">Held</th>
               <th className="num">Holdings</th>
             </tr>
           </thead>
@@ -91,7 +91,7 @@ export function PortfolioDetailView({ portfolio }: { portfolio: PortfolioDetail 
 
       <section className="col-span-12">
         <hr className="border-ink-100 mb-8" />
-        <p className="eyebrow mb-4">What&apos;s in It</p>
+        <p className="eyebrow mb-4">Holdings</p>
         {allocations.length === 0 ? (
           <p className="font-serif italic text-ink-700">
             No holdings yet. Run a rebuild once the universe has enough current classifications.

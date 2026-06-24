@@ -35,7 +35,7 @@ const CLASS_META: Record<AssetClass, { label: string; deck: string }> = {
   },
   TACTICAL: {
     label: 'Tactical',
-    deck: 'Bullish but timing-dependent. Speculative premium is elevated, so entry matters.',
+    deck: 'Bullish but timing-dependent. Sentiment premium is elevated, so entry matters.',
   },
   AVOID: {
     label: 'Avoid',
@@ -247,7 +247,7 @@ export default async function ClassificationsPage({
                   </Link>
                 </div>
                 {displayItems.length === 0 ? (
-                  <p className="font-serif italic text-ink-500">No companies in this bucket yet.</p>
+                  <p className="font-serif italic text-ink-500">No companies in this category yet.</p>
                 ) : (
                   <>
                     <ClassTable items={displayItems} />
@@ -289,7 +289,7 @@ export default async function ClassificationsPage({
 
               {displayItems.length === 0 ? (
                 <p className="font-serif italic text-ink-500">
-                  No companies in this bucket yet.
+                  No companies in this category yet.
                 </p>
               ) : (
                 <>

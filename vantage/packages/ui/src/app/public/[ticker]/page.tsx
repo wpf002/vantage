@@ -73,14 +73,14 @@ interface LatestPublicScoreResponse {
 
 const OP_LABELS: Record<string, string> = {
   'public.egs': 'Expectation Gap Analysis',
-  'public.nis': 'Thesis Quality Check',
-  'public.nhs': 'Speculative Premium Reading',
+  'public.nis': 'Fundamental Support Check',
+  'public.nhs': 'Sentiment Premium Reading',
 };
 
 const FACTOR_MEANING = {
   egs: 'How far the latest results landed from what analysts expected — and whether the price agreed.',
-  nis: 'Whether the growth story investors are paying for still holds up in the segment numbers.',
-  nhs: 'How much speculative premium and momentum is priced in right now.',
+  nis: 'Whether the fundamentals support the growth story investors are paying for.',
+  nhs: 'How much sentiment premium and momentum is priced in right now.',
 } as const;
 
 const MONTHS = [
@@ -246,13 +246,13 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
       reading: egsReading(egs.score, egs.direction),
     },
     {
-      name: 'Thesis Quality',
+      name: 'Fundamental Support',
       meaning: FACTOR_MEANING.nis,
       score: nis.score,
       reading: nisReading(nis.score),
     },
     {
-      name: 'Speculative Premium',
+      name: 'Sentiment Premium',
       meaning: FACTOR_MEANING.nhs,
       score: nhs.score,
       reading: nhsReading(nhs.score),
@@ -303,7 +303,7 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
               <tr>
                 <th>Factor</th>
                 <th className="num">Score</th>
-                <th>What it&apos;s telling us</th>
+                <th>Reading</th>
               </tr>
             </thead>
             <tbody>
@@ -375,7 +375,7 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
                 </table>
                 {narrativeSegment && (
                   <p className="font-sans text-xs text-ink-500 mt-3 leading-snug max-w-measure">
-                    Thesis Quality is currently computed against {narrativeSegment.name}.
+                    Fundamental Support is currently computed against {narrativeSegment.name}.
                     Segment selection is rule-based for now; a later release will hand it to a model.
                   </p>
                 )}
