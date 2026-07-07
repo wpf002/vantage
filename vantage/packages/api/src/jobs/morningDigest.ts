@@ -121,8 +121,7 @@ export async function computeMorningMetrics(): Promise<MorningMetrics> {
     .select({
       total: sql<number>`count(*)::int`,
       hits: sql<number>`count(*) filter (
-        where (outcome_payload->>'hit')::text in ('true','t')
-        or (outcome_payload->'hit')::text = 'true'
+        where (outcome_payload->>'correct')::boolean = true
       )::int`,
     })
     .from(schema.platformDecisions)

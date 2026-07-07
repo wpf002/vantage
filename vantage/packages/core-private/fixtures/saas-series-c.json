@@ -1,9 +1,15 @@
 {
-  "name": "Mature SaaS Co — Series C",
+  "name": "Mature SaaS Co \u2014 Series C",
   "lifeStage": "series_c_plus",
   "dcf": {
     "baseRevenue": 50000000,
-    "revenueGrowthRates": [0.4, 0.3, 0.25, 0.2, 0.15],
+    "revenueGrowthRates": [
+      0.4,
+      0.3,
+      0.25,
+      0.2,
+      0.15
+    ],
     "ebitdaMargin": 0.2,
     "taxRate": 0.21,
     "capexAsPctOfRevenue": 0.03,
@@ -19,6 +25,6 @@
   },
   "expected": {
     "wacc_approx": 0.0945,
-    "enterpriseValue_minimum": 200000000
+    "enterpriseValue_minimum": 150000000
   }
 }

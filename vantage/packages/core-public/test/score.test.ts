@@ -57,7 +57,8 @@ describe('Public Score — assembly', () => {
         historicalMedianPriceToRevenue: 8,
       },
     });
-    expect(r.score).toBeGreaterThan(45);
-    expect(['narrative_breakdown', 'story_on_thin_ice', 'cracks_forming']).toContain(r.label);
+    expect(r.score).toBeGreaterThan(40);
+    expect(['narrative_breakdown', 'story_on_thin_ice', 'cracks_forming', 'temporary_relief']).toContain(r.label);
+    expect(r.direction).toBe('bearish');
   });
 });

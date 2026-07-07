@@ -184,14 +184,12 @@ export async function computeWeeklyMetrics(): Promise<WeeklyMetrics> {
     .where(sql`${schema.publicScores.asOf} >= ${windowStartIso}::timestamptz`);
 
   // Meta-learning: count graded classification decisions in-window and the
-  // hit rate. `outcome_payload->>'hit' = 'true'` is the convention from
-  // outcomeCapture (defensive: also accept the boolean literal).
+  // hit rate. outcome_payload stores the result under 'correct' (boolean).
   const [graded] = await db
     .select({
       total: sql<number>`count(*)::int`,
       hits: sql<number>`count(*) filter (
-        where (outcome_payload->>'hit')::text in ('true','t')
-        or (outcome_payload->'hit')::text = 'true'
+        where (outcome_payload->>'correct')::boolean = true
       )::int`,
     })
     .from(schema.platformDecisions)
