@@ -482,6 +482,9 @@ export interface MorningDigestResult {
 }
 
 export async function runMorningDigest(opts: { force?: boolean } = {}): Promise<MorningDigestResult> {
+  if (process.env.MORNING_DIGEST_DISABLED === '1') {
+    return { considered: 0, sent: 0, skipped: 0 };
+  }
   const rules = await listActiveDigestRules(db);
   const result: MorningDigestResult = { considered: rules.length, sent: 0, skipped: 0 };
   if (rules.length === 0) return result;
