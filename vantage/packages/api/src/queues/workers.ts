@@ -288,6 +288,10 @@ async function handleUniverseLoad(job: Job<UniverseLoadJob>): Promise<void> {
 async function handleWeeklyProgressReport(
   job: Job<WeeklyProgressReportJob>,
 ): Promise<void> {
+  if (process.env.PROGRESS_REPORT_DISABLED === '1') {
+    log.info({ jobId: job.id }, 'progress report: disabled, skipping');
+    return;
+  }
   log.info({ jobId: job.id, reason: job.data.reason }, 'progress report: start');
   const res = await sendWeeklyProgressReport({ to: job.data.to });
   log.info({ to: res.to, dispatched: res.dispatched }, 'progress report: done');
