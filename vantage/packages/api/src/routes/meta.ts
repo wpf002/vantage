@@ -7,6 +7,7 @@ import { captureOutcomes, type OutcomePayload, DEFAULT_HORIZON_DAYS } from '../j
 import { getActiveScoringWeights } from '../db/scoringWeights.js';
 import { getActiveClassificationThresholds } from '../db/classificationThresholds.js';
 import { classificationQueue } from '../queues/index.js';
+import { rebuildSystemPortfolio } from '../jobs/systemPortfolio.js';
 
 /**
  * Phase 8 — steps 3–5: the meta-learning surface.
@@ -152,6 +153,12 @@ export const metaRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.post('/capture', { schema: { body: CaptureBody } }, async (req) => {
     const result = await captureOutcomes({ horizonDays: req.body.horizonDays });
+    return result;
+  });
+
+  // POST /v1/meta/rebuild-portfolio — rebuild the system portfolio on demand.
+  app.post('/rebuild-portfolio', async () => {
+    const result = await rebuildSystemPortfolio(db);
     return result;
   });
 
