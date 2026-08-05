@@ -35,7 +35,9 @@ export async function rebuildSystemPortfolio(db: DB): Promise<RebuildSystemPortf
     maxAssetWeight: 0.1,
     maxSectorWeight: 0.25,
     minCrossSectorCount: 4,
-    sleeveTargets: { core: 0.5, growth: 0.25, defensive: 0.15, tactical: 0.1 },
+    // No asset class maps to the defensive sleeve, so its target is 0.
+    // Budget redistributed: core 60%, growth 25%, tactical 15%.
+    sleeveTargets: { core: 0.6, growth: 0.25, defensive: 0, tactical: 0.15 },
   });
   const result = constructPortfolio(candidates, constraints);
 
