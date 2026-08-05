@@ -2,10 +2,11 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { sql } from 'drizzle-orm';
 import { PUBLIC_SCORE_WEIGHTS, CLASSIFICATION_THRESHOLDS } from '@vantage/shared';
-import { db } from '../db/client.js';
+import { db, schema } from '../db/client.js';
 import { captureOutcomes, type OutcomePayload, DEFAULT_HORIZON_DAYS } from '../jobs/outcomeCapture.js';
 import { getActiveScoringWeights } from '../db/scoringWeights.js';
 import { getActiveClassificationThresholds } from '../db/classificationThresholds.js';
+import { classificationQueue } from '../queues/index.js';
 
 /**
  * Phase 8 — steps 3–5: the meta-learning surface.
@@ -152,5 +153,18 @@ export const metaRoutes: FastifyPluginAsyncZod = async (app) => {
   app.post('/capture', { schema: { body: CaptureBody } }, async (req) => {
     const result = await captureOutcomes({ horizonDays: req.body.horizonDays });
     return result;
+  });
+
+  // POST /v1/meta/reclassify — enqueue a classification job for every entity
+  // that has at least one signal. Workers process the queue asynchronously.
+  app.post('/reclassify', async () => {
+    const rows = await db
+      .selectDistinct({ entity: schema.platformSignals.entity })
+      .from(schema.platformSignals);
+    const entities = rows.map((r) => r.entity).filter(Boolean);
+    for (const entity of entities) {
+      await classificationQueue.add('classify', { entity, triggeredBySignalId: 'manual-reclassify' });
+    }
+    return { enqueued: entities.length };
   });
 };
