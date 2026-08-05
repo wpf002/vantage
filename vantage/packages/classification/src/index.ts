@@ -96,18 +96,25 @@ export function classify(
   let classification: AssetClassT;
   let rationale: string;
 
-  // AVOID — bearish dominance or very low confidence
-  if (netBull < 0 || agg.avgConfidence < thresholds.avoidConfidenceFloor) {
+  // AVOID — bearish dominance only. Low confidence alone is not sufficient:
+  // uncertain names go to TACTICAL so they stay in the investable universe
+  // at a lighter weight rather than being excluded entirely.
+  if (netBull < 0) {
     classification = 'AVOID';
-    rationale =
-      netBull < 0
-        ? `Net bearish (${agg.bearishCount} bearish vs ${agg.bullishCount} bullish signals).`
-        : `Confidence floor breach — avg ${agg.avgConfidence.toFixed(2)}.`;
+    rationale = `Net bearish (${agg.bearishCount} bearish vs ${agg.bullishCount} bullish signals).`;
   }
-  // TACTICAL — bullish but overheated
-  else if ((agg.nhsScore ?? 0) >= 60 || (agg.publicLabel ?? '').includes('thin_ice')) {
+  // TACTICAL — overheated sentiment, or uncertain (low confidence, not bearish)
+  else if (
+    (agg.nhsScore ?? 0) >= 60 ||
+    (agg.publicLabel ?? '').includes('thin_ice') ||
+    agg.avgConfidence < thresholds.avoidConfidenceFloor
+  ) {
+    const reason =
+      agg.avgConfidence < thresholds.avoidConfidenceFloor
+        ? `Low conviction (avg confidence ${agg.avgConfidence.toFixed(2)}) — hold lightly pending confirmation.`
+        : `Bullish with elevated narrative heat (NHS ${agg.nhsScore?.toFixed(1) ?? 'n/a'}) — timing-dependent.`;
     classification = 'TACTICAL';
-    rationale = `Bullish with elevated narrative heat (NHS ${agg.nhsScore?.toFixed(1) ?? 'n/a'}) — timing-dependent.`;
+    rationale = reason;
   }
   // CORE — bullish, high confidence, narrative intact
   else if (

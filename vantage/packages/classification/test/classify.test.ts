@@ -49,7 +49,9 @@ describe('classify()', () => {
     expect(result.classification).toBe('AVOID');
   });
 
-  it('returns AVOID when average confidence is below the floor', () => {
+  it('returns TACTICAL (not AVOID) when confidence is low but signals are not net bearish', () => {
+    // Low confidence alone should not exclude a name — it should go to TACTICAL
+    // so it stays in the investable universe at a lighter weight.
     const ctx: ClassificationContext = {
       entity: 'LOW',
       signals: [
@@ -58,7 +60,7 @@ describe('classify()', () => {
       ],
     };
     const result = classify(ctx);
-    expect(result.classification).toBe('AVOID');
+    expect(result.classification).toBe('TACTICAL');
   });
 
   it('returns TACTICAL when narrative heat (NHS) is elevated', () => {
