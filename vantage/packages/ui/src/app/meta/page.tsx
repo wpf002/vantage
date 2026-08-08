@@ -3,6 +3,8 @@ import type { Route } from 'next';
 import { apiGet } from '@/lib/api';
 import { formatDate, formatNumber } from '@/lib/format';
 import { RecentlyGradedTable } from './RecentlyGradedTable';
+import { SourceReputationTable, type SourceRow } from './SourceReputationTable';
+import { EvidenceBacktest } from './EvidenceBacktest';
 
 /**
  * /meta — the meta-learning report card (Phase 8). Reads the graded decision
@@ -70,6 +72,14 @@ async function fetchMeta(): Promise<MetaResponse | null> {
   }
 }
 
+async function fetchSources(): Promise<SourceRow[]> {
+  try {
+    return await apiGet<SourceRow[]>('/v1/meta/evidence/sources');
+  } catch {
+    return [];
+  }
+}
+
 function SummaryTable({ rows, head, display }: { rows: Summary[]; head: string; display: Record<string, string> }) {
   if (rows.length === 0) return null;
   return (
@@ -99,7 +109,7 @@ function SummaryTable({ rows, head, display }: { rows: Summary[]; head: string; 
 }
 
 export default async function MetaPage() {
-  const data = await fetchMeta();
+  const [data, sources] = await Promise.all([fetchMeta(), fetchSources()]);
 
   return (
     <article className="grid grid-cols-12 gap-x-10 gap-y-8">
@@ -159,6 +169,34 @@ export default async function MetaPage() {
           </div>
         </section>
       )}
+
+      {/* Evidence Quality section */}
+      <section className="col-span-12 border-t border-ink-100 pt-10 space-y-12">
+        <div>
+          <p className="eyebrow mb-2">Evidence Quality</p>
+          <p className="font-serif text-deck text-ink-800 max-w-measure leading-relaxed">
+            Each data source that feeds the divergence index carries a credibility score, updated
+            via exponential smoothing as graded outcomes arrive. Sources that are consistently
+            correct gain weight; those that miss lose it.
+          </p>
+        </div>
+
+        {sources.length > 0 ? (
+          <div>
+            <p className="eyebrow mb-4">Source Reputation</p>
+            <SourceReputationTable rows={sources} />
+          </div>
+        ) : (
+          <p className="font-serif italic text-ink-500 text-sm">
+            No source reputation data yet — scores accumulate as outcomes are graded.
+          </p>
+        )}
+
+        <div>
+          <p className="eyebrow mb-4">Accuracy Backtest</p>
+          <EvidenceBacktest />
+        </div>
+      </section>
 
       <footer className="col-span-12 pt-4">
         <Link href={'/classifications' as Route} className="font-sans text-xs uppercase tracking-wider text-ink-500 hover:text-editorial">

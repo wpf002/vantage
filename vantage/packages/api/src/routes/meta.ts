@@ -238,4 +238,50 @@ export const metaRoutes: FastifyPluginAsyncZod = async (app) => {
       }));
     },
   );
+
+  /**
+   * GET /v1/meta/evidence/entity/:entity/reasoning
+   * Latest reasoning paths for an entity (e.g. a ticker), across all its
+   * decisions, ordered newest-first. Returns at most 5 decisions × their layers.
+   * Used by the per-company score page to surface signal quality.
+   */
+  app.get(
+    '/evidence/entity/:entity/reasoning',
+    { schema: { params: z.object({ entity: z.string().min(1).max(20) }) } },
+    async (req) => {
+      const { entity } = req.params;
+
+      // Latest 3 decisions for this entity that have reasoning paths.
+      const recentDecisions = await db
+        .select({ id: schema.platformDecisions.id, decisionType: schema.platformDecisions.decisionType, createdAt: schema.platformDecisions.createdAt })
+        .from(schema.platformDecisions)
+        .where(eq(schema.platformDecisions.entity, entity))
+        .orderBy(schema.platformDecisions.createdAt)
+        .limit(3);
+
+      if (recentDecisions.length === 0) return [];
+
+      const results = await Promise.all(
+        recentDecisions.map(async (d) => {
+          const paths = await getReasoningPaths(d.id);
+          return {
+            decisionId: d.id,
+            decisionType: d.decisionType,
+            decidedAt: d.createdAt,
+            layers: paths.map((p) => ({
+              layer: p.layer,
+              layerScore: p.layerScore !== null ? Number(p.layerScore) : null,
+              compositeQuality: p.compositeQuality !== null ? Number(p.compositeQuality) : null,
+              fired: p.fired,
+              maxSensitivitySignalId: p.maxSensitivitySignalId,
+              maxSensitivityDelta: p.maxSensitivityDelta !== null ? Number(p.maxSensitivityDelta) : null,
+            })),
+          };
+        }),
+      );
+
+      // Only return decisions that have reasoning path rows.
+      return results.filter((r) => r.layers.length > 0);
+    },
+  );
 };

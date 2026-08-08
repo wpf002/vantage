@@ -7,6 +7,7 @@ import { apiGet } from '@/lib/api';
 import { formatDate } from '@/lib/format';
 import { RunScoreButton } from './RunScoreButton';
 import { FreshnessIndicator } from './FreshnessIndicator';
+import { SignalQualityPanel } from './SignalQualityPanel';
 
 /**
  * Public company page — reads the latest live Public Score from the API.
@@ -410,6 +411,8 @@ export default async function PublicTicker({ params }: { params: Promise<{ ticke
             The Public Score and its components over time, logged daily.
           </p>
         </div>
+        <hr className="border-ink-100" />
+        <SignalQualityPanel ticker={ticker} />
       </aside>
     </article>
   );
