@@ -41,6 +41,9 @@ importers:
       '@vantage/data-ingest':
         specifier: workspace:*
         version: link:../data-ingest
+      '@vantage/evidence':
+        specifier: workspace:*
+        version: link:../evidence
       '@vantage/explanation':
         specifier: workspace:*
         version: link:../explanation
@@ -232,6 +235,22 @@ importers:
         version: 2.1.9(@types/node@22.19.19)
 
   packages/data-ingest:
+    dependencies:
+      '@vantage/shared':
+        specifier: workspace:*
+        version: link:../shared
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.19)
+
+  packages/evidence:
     dependencies:
       '@vantage/shared':
         specifier: workspace:*

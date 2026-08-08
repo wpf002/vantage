@@ -9,6 +9,7 @@
   "include": ["src/**/*"],
   "references": [
     { "path": "../shared" },
+    { "path": "../evidence" },
     { "path": "../core-private" },
     { "path": "../core-public" },
     { "path": "../harmonizer" },

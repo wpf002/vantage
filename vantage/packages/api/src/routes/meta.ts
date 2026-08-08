@@ -1,6 +1,6 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { sql } from 'drizzle-orm';
+import { sql, eq } from 'drizzle-orm';
 import { PUBLIC_SCORE_WEIGHTS, CLASSIFICATION_THRESHOLDS } from '@vantage/shared';
 import { db, schema } from '../db/client.js';
 import { captureOutcomes, type OutcomePayload, DEFAULT_HORIZON_DAYS } from '../jobs/outcomeCapture.js';
@@ -8,6 +8,8 @@ import { getActiveScoringWeights } from '../db/scoringWeights.js';
 import { getActiveClassificationThresholds } from '../db/classificationThresholds.js';
 import { classificationQueue } from '../queues/index.js';
 import { rebuildSystemPortfolio } from '../jobs/systemPortfolio.js';
+import { backtestReputation } from '../jobs/backtestReputation.js';
+import { getReasoningPaths } from '../db/evidenceStore.js';
 
 /**
  * Phase 8 — steps 3–5: the meta-learning surface.
@@ -174,4 +176,66 @@ export const metaRoutes: FastifyPluginAsyncZod = async (app) => {
     }
     return { enqueued: entities.length };
   });
+
+  // ── Evidence Quality endpoints ───────────────────────────────────────────
+
+  /**
+   * GET /v1/meta/evidence/sources
+   * Current reputation state for all tracked sources, sorted by sample count.
+   */
+  app.get('/evidence/sources', async () => {
+    const rows = await db
+      .select()
+      .from(schema.evidenceSources)
+      .orderBy(schema.evidenceSources.sampleCount);
+
+    return rows.map((r) => ({
+      sourceKey: r.sourceKey,
+      sourceType: r.sourceType,
+      displayName: r.displayName,
+      credibilityScore: Number(r.credibilityScore),
+      sampleCount: r.sampleCount,
+      correctCount: r.correctCount,
+      hitRate: r.sampleCount > 0 ? r.correctCount / r.sampleCount : null,
+      updatedAt: r.updatedAt,
+    }));
+  });
+
+  /**
+   * POST /v1/meta/evidence/backtest
+   * Run a read-only reputation backtest over graded decision history.
+   * Body: { limit?: number }
+   */
+  const BacktestBody = z.object({
+    limit: z.coerce.number().int().min(1).max(100000).optional(),
+  });
+  app.post('/evidence/backtest', { schema: { body: BacktestBody } }, async (req) => {
+    return backtestReputation({ limit: req.body.limit });
+  });
+
+  /**
+   * GET /v1/meta/decisions/:id/reasoning
+   * Reasoning path (layer traces) for a specific decision.
+   */
+  app.get(
+    '/decisions/:id/reasoning',
+    { schema: { params: z.object({ id: z.string().uuid() }) } },
+    async (req) => {
+      const paths = await getReasoningPaths(req.params.id);
+      return paths.map((p) => ({
+        layer: p.layer,
+        layerScore: p.layerScore !== null ? Number(p.layerScore) : null,
+        thresholdKey: p.thresholdKey,
+        thresholdValue: p.thresholdValue !== null ? Number(p.thresholdValue) : null,
+        fired: p.fired,
+        inputSignalIds: p.inputSignalIds,
+        qualityScores: p.qualityScores,
+        compositeQuality: p.compositeQuality !== null ? Number(p.compositeQuality) : null,
+        sensitivity: p.sensitivity,
+        maxSensitivitySignalId: p.maxSensitivitySignalId,
+        maxSensitivityDelta: p.maxSensitivityDelta !== null ? Number(p.maxSensitivityDelta) : null,
+        capturedAt: p.capturedAt,
+      }));
+    },
+  );
 };

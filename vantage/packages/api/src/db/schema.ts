@@ -571,3 +571,89 @@ export const publicNarrativeTags = pgTable(
     uniqTickerAsOf: uniqueIndex('public_narrative_tags_ticker_asof_uniq').on(t.ticker, t.asOf),
   }),
 );
+
+// ── Evidence quality tables (Phase 11) ────────────────────────────────────
+
+/**
+ * evidence_sources — registry of known data sources with reputation tracking.
+ * One row per source_key (e.g. 'fmp:market_data', 'news:reuters').
+ * credibility_score is updated by the reputation decay job after each graded
+ * decision. Seeded by migration 0009.
+ */
+export const evidenceSources = pgTable(
+  'evidence_sources',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    sourceKey: text('source_key').notNull().unique(),
+    sourceType: text('source_type').notNull(),
+    displayName: text('display_name').notNull(),
+    credibilityScore: numeric('credibility_score', { precision: 6, scale: 5 }).notNull().default('0.70000'),
+    decayRate: numeric('decay_rate', { precision: 6, scale: 5 }).notNull().default('0.05000'),
+    sampleCount: integer('sample_count').notNull().default(0),
+    correctCount: integer('correct_count').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+);
+
+/**
+ * evidence_quality — per-signal quality assessment.
+ * One row per harmonized platform_signal. Records the five quality components
+ * and the composite score at ingestion time, retaining the weight snapshot.
+ */
+export const evidenceQuality = pgTable(
+  'evidence_quality',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    signalId: uuid('signal_id').notNull().references(() => platformSignals.id, { onDelete: 'cascade' }),
+    sourceKey: text('source_key').notNull(),
+    sourceCredibility: numeric('source_credibility', { precision: 6, scale: 5 }).notNull(),
+    recencyScore: numeric('recency_score', { precision: 6, scale: 5 }).notNull(),
+    independenceScore: numeric('independence_score', { precision: 6, scale: 5 }).notNull(),
+    methodologicalStrength: numeric('methodological_strength', { precision: 6, scale: 5 }).notNull(),
+    historicalReliability: numeric('historical_reliability', { precision: 6, scale: 5 }).notNull(),
+    compositeScore: numeric('composite_score', { precision: 6, scale: 5 }).notNull(),
+    weightConfig: jsonb('weight_config').notNull(),
+    scoredAt: timestamp('scored_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    signalIdx: index('idx_evidence_quality_signal').on(t.signalId),
+    sourceIdx: index('idx_evidence_quality_source').on(t.sourceKey),
+    compositeIdx: index('idx_evidence_quality_composite').on(t.compositeScore),
+  }),
+);
+
+/**
+ * reasoning_paths — per-layer audit trail for divergence signals.
+ * One row per layer per decision. A full divergence scoring run produces
+ * rows for 'egs', 'nis', 'nhs', and 'composite'. Classification adds
+ * a 'classification' row.
+ *
+ * input_signal_ids and quality_scores are JSONB for flexibility.
+ * sensitivity: { signal_id → abs_delta_if_removed }
+ */
+export const reasoningPaths = pgTable(
+  'reasoning_paths',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    decisionId: uuid('decision_id').notNull().references(() => platformDecisions.id, { onDelete: 'cascade' }),
+    entity: text('entity').notNull(),
+    layer: text('layer').notNull(), // 'egs'|'nis'|'nhs'|'composite'|'classification'
+    layerScore: numeric('layer_score', { precision: 8, scale: 5 }),
+    thresholdKey: text('threshold_key'),
+    thresholdValue: numeric('threshold_value', { precision: 8, scale: 5 }),
+    fired: boolean('fired').notNull().default(false),
+    inputSignalIds: jsonb('input_signal_ids').notNull().default(sql`'[]'::jsonb`),
+    qualityScores: jsonb('quality_scores').notNull().default(sql`'{}'::jsonb`),
+    compositeQuality: numeric('composite_quality', { precision: 6, scale: 5 }),
+    sensitivity: jsonb('sensitivity').notNull().default(sql`'{}'::jsonb`),
+    maxSensitivitySignalId: text('max_sensitivity_signal_id'),
+    maxSensitivityDelta: numeric('max_sensitivity_delta', { precision: 10, scale: 7 }),
+    capturedAt: timestamp('captured_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    decisionIdx: index('idx_reasoning_paths_decision').on(t.decisionId),
+    entityIdx: index('idx_reasoning_paths_entity').on(t.entity),
+    layerIdx: index('idx_reasoning_paths_layer').on(t.layer),
+  }),
+);

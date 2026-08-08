@@ -31,6 +31,7 @@
     "@fastify/cors": "^10.0.0",
     "@fastify/helmet": "^12.0.0",
     "@vantage/classification": "workspace:*",
+    "@vantage/evidence": "workspace:*",
     "@vantage/core-private": "workspace:*",
     "@vantage/core-public": "workspace:*",
     "@vantage/data-ingest": "workspace:*",

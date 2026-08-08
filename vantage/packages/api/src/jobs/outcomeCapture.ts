@@ -2,6 +2,7 @@ import pino from 'pino';
 import { and, eq, inArray, isNull, lte } from 'drizzle-orm';
 import { FmpClient, type FmpHistoricalPrice } from '@vantage/data-ingest/public';
 import { db, schema } from '../db/client.js';
+import { updateSourceReputationForDecision } from './updateSourceReputation.js';
 
 /**
  * Phase 8 — step 2: outcome capture (the "teacher").
@@ -251,6 +252,10 @@ export async function captureOutcomes(
       .set({ outcomePayload: payload, outcomeAt: new Date() })
       .where(eq(schema.platformDecisions.id, d.id));
     result.graded++;
+
+    // Fire-and-forget: advance source reputation scores based on this outcome.
+    // Errors are swallowed inside updateSourceReputationForDecision.
+    void updateSourceReputationForDecision(d.id, payload.correct);
   }
 
   log.info(result, 'outcome capture complete');
