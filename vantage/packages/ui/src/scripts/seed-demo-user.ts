@@ -11,7 +11,7 @@
  * Or rely on the defaults below if env vars aren't set.
  */
 
-import 'dotenv/config';
+// env loaded via --env-file flag in the npm script
 import bcrypt from 'bcryptjs';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';

@@ -16,6 +16,7 @@ COPY packages/classification/package.json       packages/classification/package.
 COPY packages/core-private/package.json         packages/core-private/package.json
 COPY packages/core-public/package.json          packages/core-public/package.json
 COPY packages/data-ingest/package.json          packages/data-ingest/package.json
+COPY packages/evidence/package.json             packages/evidence/package.json
 COPY packages/explanation/package.json          packages/explanation/package.json
 COPY packages/harmonizer/package.json           packages/harmonizer/package.json
 COPY packages/portfolio/package.json            packages/portfolio/package.json
@@ -31,6 +32,7 @@ COPY packages/classification packages/classification
 COPY packages/core-private packages/core-private
 COPY packages/core-public  packages/core-public
 COPY packages/data-ingest  packages/data-ingest
+COPY packages/evidence     packages/evidence
 COPY packages/explanation  packages/explanation
 COPY packages/harmonizer   packages/harmonizer
 COPY packages/portfolio    packages/portfolio
