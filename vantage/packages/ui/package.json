@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "lint": "next lint",
-    "clean": "rm -rf .next .turbo *.tsbuildinfo"
+    "clean": "rm -rf .next .turbo *.tsbuildinfo",
+    "seed:demo": "tsx --env-file=../../.env src/scripts/seed-demo-user.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.0",

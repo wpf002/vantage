@@ -127,12 +127,30 @@ export default async function SignInPage({ searchParams }: PageProps) {
           </button>
         </form>
 
-        <p className="font-sans text-sm text-ink-700 mt-12">
-          {isCreate ? 'Already have an account? ' : 'New to Vantage? '}
-          <Link href={otherModeHref} className="text-editorial hover:underline">
-            {isCreate ? 'Sign in' : 'Create an account'}
-          </Link>
-        </p>
+        <div className="font-sans text-sm text-ink-700 mt-12 space-y-3">
+          <p>
+            {isCreate ? 'Already have an account? ' : 'New to Vantage? '}
+            <Link href={otherModeHref} className="text-editorial hover:underline">
+              {isCreate ? 'Sign in' : 'Create an account'}
+            </Link>
+          </p>
+          {!isCreate && (
+            <p>
+              <Link href={'/forgot-password' as Route} className="text-ink-500 hover:text-editorial hover:underline">
+                Forgot your password?
+              </Link>
+            </p>
+          )}
+          {process.env.NEXT_PUBLIC_DEMO_EMAIL && !isCreate && (
+            <p className="pt-4 border-t border-ink-100">
+              <span className="text-ink-500">Demo account: </span>
+              <span className="font-mono text-ink-700">{process.env.NEXT_PUBLIC_DEMO_EMAIL}</span>
+              {process.env.NEXT_PUBLIC_DEMO_PASSWORD && (
+                <> / <span className="font-mono text-ink-700">{process.env.NEXT_PUBLIC_DEMO_PASSWORD}</span></>
+              )}
+            </p>
+          )}
+        </div>
       </section>
 
       </div>

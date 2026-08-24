@@ -144,3 +144,80 @@ export async function destroyCurrentSession(): Promise<void> {
     c.delete(SESSION_COOKIE_NAME);
   }
 }
+
+// ── Password reset ─────────────────────────────────────────────────────────
+
+const RESET_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+/**
+ * Issue a password-reset token for the given email and return it.
+ * Silently succeeds even if no account exists (no enumeration).
+ * Returns the token so the caller can email it.
+ */
+export async function requestPasswordReset(emailRaw: string): Promise<string | null> {
+  const email = validateEmail(emailRaw);
+
+  const rows = await db
+    .select({ id: authSchema.users.id })
+    .from(authSchema.users)
+    .where(eq(authSchema.users.email, email))
+    .limit(1);
+
+  // No account — return null silently; caller shows the same "check your inbox"
+  // message regardless so we don't reveal whether the email is registered.
+  if (rows.length === 0) return null;
+
+  // Invalidate any existing token for this email, then insert a fresh one.
+  await db
+    .delete(authSchema.verificationTokens)
+    .where(eq(authSchema.verificationTokens.identifier, email));
+
+  const token = randomBytes(32).toString('hex');
+  const expires = new Date(Date.now() + RESET_TTL_MS);
+  await db.insert(authSchema.verificationTokens).values({ identifier: email, token, expires });
+
+  return token;
+}
+
+/**
+ * Validate a reset token and update the user's password.
+ * Starts a session on success. Throws CredentialsError on invalid/expired token.
+ */
+export async function resetPassword(
+  emailRaw: string,
+  token: string,
+  newPasswordRaw: string,
+): Promise<void> {
+  const email = validateEmail(emailRaw);
+  const newPassword = validatePassword(newPasswordRaw);
+
+  const rows = await db
+    .select()
+    .from(authSchema.verificationTokens)
+    .where(eq(authSchema.verificationTokens.identifier, email))
+    .limit(1);
+
+  const row = rows[0];
+  if (!row || row.token !== token || row.expires < new Date()) {
+    throw new CredentialsError('This reset link is invalid or has expired. Request a new one.');
+  }
+
+  // Hash the new password and update the user.
+  const passwordHash = await bcrypt.hash(newPassword, BCRYPT_COST);
+  const updated = await db
+    .update(authSchema.users)
+    .set({ passwordHash })
+    .where(eq(authSchema.users.email, email))
+    .returning({ id: authSchema.users.id });
+
+  if (updated.length === 0) {
+    throw new CredentialsError('Account not found.');
+  }
+
+  // Consume the token (one-time use).
+  await db
+    .delete(authSchema.verificationTokens)
+    .where(eq(authSchema.verificationTokens.identifier, email));
+
+  await startSession(updated[0]!.id);
+}
