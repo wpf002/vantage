@@ -20,7 +20,8 @@ import { metaRoutes } from './routes/meta.js';
 import { watchlistsRoutes } from './routes/watchlists.js';
 import { alertsRoutes } from './routes/alerts.js';
 import { registerSessionMiddleware } from './middleware/session.js';
-import { startWorkers, stopWorkers } from './queues/workers.js';
+import { startWorkers, stopWorkers, activeJobCount } from './queues/workers.js';
+import { containerMemoryBytes, shouldRecycle, RECYCLE_CHECK_MS } from './recycle.js';
 import { closeQueues } from './queues/index.js';
 
 async function buildServer() {
@@ -95,8 +96,17 @@ async function buildServer() {
   await app.register(watchlistsRoutes, { prefix: '/v1/watchlists' });
   await app.register(alertsRoutes, { prefix: '/v1/alerts' });
 
+  // Last touch by a human or a client, so a recycle can wait for quiet.
+  app.addHook('onRequest', (_req, _reply, done) => {
+    lastRequestAt = Date.now();
+    done();
+  });
+
   return app;
 }
+
+/** Updated on every request; a recycle waits until this goes quiet. */
+let lastRequestAt = Date.now();
 
 async function main() {
   const app = await buildServer();
@@ -122,6 +132,34 @@ async function main() {
     await closeQueues();
     process.exit(0);
   };
+
+  /**
+   * Six weeks of in-process job allocations had this container at 1.26 GB
+   * against a ~0.2 GB boot, billed by the minute for memory nothing was using.
+   * Rather than hunt every retention site across ten queues, the process
+   * restarts itself — but only when it is heavy AND quiet: no job running, no
+   * request for five minutes. Railway's restart policy brings it back.
+   */
+  const recycleTimer = setInterval(() => {
+    const state = {
+      memoryBytes: containerMemoryBytes(),
+      uptimeMs: process.uptime() * 1000,
+      msSinceLastRequest: Date.now() - lastRequestAt,
+      activeJobs: activeJobCount(),
+    };
+    if (!shouldRecycle(state)) return;
+    clearInterval(recycleTimer);
+    app.log.info(
+      {
+        containerGb: +(state.memoryBytes / 1024 ** 3).toFixed(2),
+        heapGb: +(process.memoryUsage().rss / 1024 ** 3).toFixed(2),
+        quietForMin: Math.round(state.msSinceLastRequest / 60000),
+      },
+      'recycling: heavy and idle, restarting for a fresh process',
+    );
+    void shutdown('recycle');
+  }, RECYCLE_CHECK_MS);
+  recycleTimer.unref();
   process.on('SIGTERM', () => void shutdown('SIGTERM'));
   process.on('SIGINT', () => void shutdown('SIGINT'));
 }

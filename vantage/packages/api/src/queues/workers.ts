@@ -426,7 +426,7 @@ export function startWorkers(): void {
     progressReportWorker,
     morningDigestWorker,
     narrativeTagWorker,
-  ];
+  ].map(countJobs);
 
   // Phase 10 — reactive alert evaluator subscribes to the harmonized-signal
   // pub/sub channel (separate from the BullMQ workers above).
@@ -444,6 +444,26 @@ export function startWorkers(): void {
   void ensureAdminMorningDigestRule();
 
   log.info('workers started');
+}
+
+/** Jobs running right now, counted from worker events rather than asked of
+ *  the queue: the API restarts itself when it gets heavy (recycle.ts) and asks
+ *  this first, so a restart never lands in the middle of a job. */
+let running = 0;
+export function activeJobCount(): number {
+  return running;
+}
+
+function countJobs(worker: Worker): Worker {
+  worker.on('active', () => {
+    running += 1;
+  });
+  const done = () => {
+    running = Math.max(0, running - 1);
+  };
+  worker.on('completed', done);
+  worker.on('failed', done);
+  return worker;
 }
 
 export async function stopWorkers(): Promise<void> {
